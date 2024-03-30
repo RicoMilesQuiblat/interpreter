@@ -40,10 +40,71 @@ public class Lexer {
 
         switch (ch) {
             case '=':
-                tok = newToken(TokenType.ASSIGN, ch);
+                if(peekChar() == '='){
+                    char tempCh = ch;
+                    readChar();
+                    String finalLiteral = Character.toString(tempCh) + Character.toString(ch);
+                    tok.setLiteral(finalLiteral);
+                    tok.setTokenType(TokenType.EQUAL);
+                }else{
+                    tok = newToken(TokenType.ASSIGN, ch);
+                }
+                break;
+            case '(':
+                tok = newToken(TokenType.LPARA, ch);
+                break;
+            case ')':
+                tok = newToken(TokenType.RPARA, ch);
                 break;
             case '+':
                 tok = newToken(TokenType.PLUS, ch);
+                break;
+            case '-':
+                tok = newToken(TokenType.SUBTRACT, ch);
+                break;
+            case '*':
+                tok = newToken(TokenType.MULTIPLY, ch);
+                break;
+            case '/':
+                tok = newToken(TokenType.DIVIDE, ch);
+                break;
+            case '%':
+                tok = newToken(TokenType.MODULO, ch);
+                break;
+            case '>':
+                if(peekChar() == '='){
+                    char tempCh = ch;
+                    readChar();
+                    String finalLiteral = Character.toString(tempCh) + Character.toString(ch);
+                    tok.setLiteral(finalLiteral);
+                    tok.setTokenType(TokenType.GREATEQ);
+                }else{
+                    tok = newToken(TokenType.GREAT, ch);
+                }
+                break;
+            case '<':
+                if(peekChar() == '='){
+                    char tempCh = ch;
+                    readChar();
+                    String finalLiteral = Character.toString(tempCh) + Character.toString(ch);
+                    tok.setLiteral(finalLiteral);
+                    tok.setTokenType(TokenType.LESSEQ);
+                }else if(peekChar() == '>'){
+                    char tempCh = ch;
+                    
+                    readChar();
+                    String finalLiteral = Character.toString(tempCh) + Character.toString(ch);
+                    tok.setLiteral(finalLiteral);
+                    tok.setTokenType(TokenType.NOTEQUAL);
+                }else {
+                    tok = newToken(TokenType.LESS, ch);
+                }
+                break;
+            case '[':
+                tok = newToken(TokenType.LESCAPE, ch);
+                break;
+            case ']':
+                tok = newToken(TokenType.RESCAPE, ch);
                 break;
             case '\'':
                 readChar();
@@ -86,6 +147,14 @@ public class Lexer {
         readChar();
 
         return tok;
+    }
+
+    private char peekChar(){
+        if (readPosition >= input.length()){
+            return 0;
+        }else{
+            return input.charAt(readPosition);
+        }
     }
 
     private String readIdentifier(){

@@ -9,24 +9,26 @@ import token.TokenType;
 public class LexerTest {
     
     public static void main(String[] args){
-        String input = "BEGIN CODE\n    INT num = 5\n CHAR ch = \'c\' \n #comment bruh \n BOOL bl = \"TRUE\" \n END CODE";
+        String input = "<+><>==-=*<=>=/%[]()";
 
         List<TestToken> tests = Arrays.asList(
-            new TestToken(TokenType.START, "BEGIN CODE"),
-            new TestToken(TokenType.INT, "INT"),
-            new TestToken(TokenType.IDENT, "num"),
+            new TestToken(TokenType.LESS, "<"),
+            new TestToken(TokenType.PLUS, "+"),
+            new TestToken(TokenType.GREAT, ">"),
+            new TestToken(TokenType.NOTEQUAL, "<>"),
+            new TestToken(TokenType.EQUAL, "=="),
+            new TestToken(TokenType.SUBTRACT, "-"),
             new TestToken(TokenType.ASSIGN, "="),
-            new TestToken(TokenType.DIGIT, "5"),
-            new TestToken(TokenType.CHAR, "CHAR"),
-            new TestToken(TokenType.IDENT, "ch"),
-            new TestToken(TokenType.ASSIGN, "="),
-            new TestToken(TokenType.CHARACTER, "c"),
-            new TestToken(TokenType.COMMENT, "#comment bruh "),
-            new TestToken(TokenType.BOOL, "BOOL"),
-            new TestToken(TokenType.IDENT, "bl"),
-            new TestToken(TokenType.ASSIGN, "="),
-            new TestToken(TokenType.BOOLEAN, "TRUE"),
-            new TestToken(TokenType.END, "END CODE")
+            new TestToken(TokenType.MULTIPLY, "*"),
+            new TestToken(TokenType.LESSEQ, "<="),
+            new TestToken(TokenType.GREATEQ, ">="),
+            new TestToken(TokenType.DIVIDE, "/"),
+            new TestToken(TokenType.MODULO, "%"),
+            new TestToken(TokenType.LESCAPE, "["),
+            new TestToken(TokenType.RESCAPE, "]"),
+            new TestToken(TokenType.LPARA, "("),
+            new TestToken(TokenType.RPARA, ")")
+
         );
 
         Lexer lexer = new Lexer(input);

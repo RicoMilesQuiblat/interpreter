@@ -12,8 +12,23 @@ public enum TokenType {
 
     //Operators
     ASSIGN("="),
+    LPARA("("),
+    RPARA(")"),
     PLUS("+"),
     SUBTRACT("-"),
+    MULTIPLY("*"),
+    DIVIDE("/"),
+    MODULO("%"),
+    GREAT(">"),
+    LESS("<"),
+    GREATEQ(">="),
+    LESSEQ("<="),
+    EQUAL("=="),
+    NOTEQUAL("<>"),
+    RESCAPE("]"),
+    LESCAPE("["),
+
+
 
     //KEYWORD
     START("BEGIN CODE"),
@@ -23,7 +38,8 @@ public enum TokenType {
     BOOL("BOOL"),
     FLOAT("FLOAT"),
     COMMENT("#"),
-    DISPLAY("DISPLAY:");
+    DISPLAY("DISPLAY:"),
+    SCAN("SCAN:");
 
 
 
