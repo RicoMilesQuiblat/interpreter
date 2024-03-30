@@ -45,6 +45,26 @@ public class Lexer {
             case '+':
                 tok = newToken(TokenType.PLUS, ch);
                 break;
+            case '\'':
+                readChar();
+                char tempCh = ch;
+                readChar();
+
+                if(ch == '\''){
+                    tok = newToken(TokenType.CHARACTER, tempCh);
+                }else{
+                    tok = newToken(TokenType.ILLEGAL, ch);
+                }
+                break;
+            case '#':
+                tok .setLiteral(readComment());
+                tok.setTokenType(TokenType.COMMENT);
+                break;
+            
+            case '\"':
+                tok.setLiteral(readBoolean());
+                tok.setTokenType(TokenType.BOOLEAN);
+                break;
             case 0:
                 tok.setLiteral("");
                 tok.setTokenType(TokenType.EOF);
@@ -70,6 +90,8 @@ public class Lexer {
 
     private String readIdentifier(){
         int tempPosition = position;
+
+    
         while(isLetter(ch)){
             readChar();
         }
@@ -84,6 +106,27 @@ public class Lexer {
         }
         return input.substring(tempPosition, position);
     }
+
+    private String readComment(){
+        int tempPosition = position;
+        while(ch != '\n'){
+            readChar();
+        }
+        
+
+        return input.substring(tempPosition, position);
+    }
+
+    private String readBoolean(){
+        readChar();
+        int tempPosition = position;
+        while(ch != '"'){
+            readChar();
+        }
+        
+        return input.substring(tempPosition, position);
+    }
+
 
     private String readNumber(){
         int tempPosition = position;

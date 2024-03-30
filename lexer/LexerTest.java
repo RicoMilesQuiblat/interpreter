@@ -9,7 +9,7 @@ import token.TokenType;
 public class LexerTest {
     
     public static void main(String[] args){
-        String input = "BEGIN CODE\n    INT num = 5\n END CODE\n CHAR ch = ";
+        String input = "BEGIN CODE\n    INT num = 5\n CHAR ch = \'c\' \n #comment bruh \n BOOL bl = \"TRUE\" \n END CODE";
 
         List<TestToken> tests = Arrays.asList(
             new TestToken(TokenType.START, "BEGIN CODE"),
@@ -17,16 +17,26 @@ public class LexerTest {
             new TestToken(TokenType.IDENT, "num"),
             new TestToken(TokenType.ASSIGN, "="),
             new TestToken(TokenType.DIGIT, "5"),
+            new TestToken(TokenType.CHAR, "CHAR"),
+            new TestToken(TokenType.IDENT, "ch"),
+            new TestToken(TokenType.ASSIGN, "="),
+            new TestToken(TokenType.CHARACTER, "c"),
+            new TestToken(TokenType.COMMENT, "#comment bruh "),
+            new TestToken(TokenType.BOOL, "BOOL"),
+            new TestToken(TokenType.IDENT, "bl"),
+            new TestToken(TokenType.ASSIGN, "="),
+            new TestToken(TokenType.BOOLEAN, "TRUE"),
             new TestToken(TokenType.END, "END CODE")
         );
 
         Lexer lexer = new Lexer(input);
 
+        
+
         for (int i = 0; i < tests.size(); i++){
             TestToken tt = tests.get(i);
             Token tok = lexer.nextToken();
 
-           
             System.out.println(String.format("test[%s]",i));
 
             if(tok.getTokenType() != tt.getExpectedType()){

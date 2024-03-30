@@ -25,6 +25,7 @@ public class Token {
         keywords.put("BOOL", TokenType.BOOL);
         keywords.put("BEGIN CODE", TokenType.START);
         keywords.put("END CODE", TokenType.END);
+        keywords.put("DISPLAY:", TokenType.DISPLAY);
     }
 
     public TokenType lookupIdent(String ident){

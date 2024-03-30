@@ -7,6 +7,8 @@ public enum TokenType {
     //Identifiers + literals
     IDENT("IDENT"),
     DIGIT("DIGIT"),
+    BOOLEAN("BOOLEAN"),
+    CHARACTER("CHARACTER"),
 
     //Operators
     ASSIGN("="),
@@ -20,7 +22,8 @@ public enum TokenType {
     CHAR("CHAR"),
     BOOL("BOOL"),
     FLOAT("FLOAT"),
-    COMMENT("#");
+    COMMENT("#"),
+    DISPLAY("DISPLAY:");
 
 
 
