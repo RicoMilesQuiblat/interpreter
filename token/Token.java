@@ -51,6 +51,6 @@ public class Token {
     }
 
     public String toString(){
-        return "Token{" + "type = " + tokenType + "literal = " +  literal + "}";
+        return "Token{" + "type = \"" + tokenType + "\" literal = \"" +  literal + "\"}";
     }
 }
