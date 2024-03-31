@@ -14,6 +14,7 @@ import ast.Program;
 import ast.Statement;
 import object.BooleanObject;
 import object.CharacterObject;
+import object.Error;
 import object.IntegerObject;
 import object.NullObject;
 import object.Object;
@@ -76,8 +77,10 @@ public class Evaluator {
     private static Object evalInfixExpression(String operator, Object left, Object right){
         if(left.type().equals(ObjectType.INTEGER_OBJ) && right.type().equals(ObjectType.INTEGER_OBJ)){
             return evalIntegerInfixExpression(operator, left, right);
+        }else if(!(left.type().equals(right.type()))){
+            return newError("type mismatch: %s %s %s", left.type(), operator, right.type());
         }
-        return NULL;
+        return newError("unkown operator: %s %s %s", left.type(), operator, right.type());
     }
 
     private static Object evalIntegerInfixExpression(String operator, Object left, Object right){
@@ -121,7 +124,7 @@ public class Evaluator {
                 
                 return evalMinusPrefixOperatorExpression(right);
             default:
-                return NULL;
+                return newError("unknown operator: %s%s", operator, right.type());
         }
     }
 
@@ -133,5 +136,9 @@ public class Evaluator {
         IntegerObject obj = (IntegerObject)right;
         int value = obj.getValue();
         return new IntegerObject(value * -1);
+    }
+
+    private static Error newError(String format, java.lang.Object... a){
+        return new Error(String.format(format, a));
     }
 }
