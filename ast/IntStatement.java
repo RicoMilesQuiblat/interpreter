@@ -50,5 +50,10 @@ public class IntStatement implements Statement {
     public String getTokenLiteral() {
         return token.getLiteral();
     }
+    @Override
+    public String string() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'string'");
+    }
     
 }

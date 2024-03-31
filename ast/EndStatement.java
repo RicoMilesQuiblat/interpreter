@@ -2,11 +2,10 @@ package ast;
 
 import token.Token;
 
-public class BeginStatement implements Statement{
+public class EndStatement implements Statement{
+        private Token token;
     
-    private Token token;
-    
-    public BeginStatement(){
+    public EndStatement(){
         
     }
     
@@ -35,6 +34,4 @@ public class BeginStatement implements Statement{
         throw new UnsupportedOperationException("Unimplemented method 'string'");
     }
 
-    
-    
 }

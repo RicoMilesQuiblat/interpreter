@@ -2,29 +2,57 @@ package parser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
+
 import ast.BoolStatement;
 import ast.CharStatement;
+import ast.Expression;
+import ast.ExpressionStatement;
+import ast.Identifier;
 import ast.Node;
 import ast.Program;
 import ast.Statement;
-import junit.framework.Test;
 import lexer.Lexer;
 
 
 public class ParserTest {
 
-    
+    @org.junit.Test
+    public static void testIdentifierExpression() throws Exception{
+        String input = "imissher";
+
+        Lexer l = new Lexer(input);
+        Parser p = new Parser(l);
+        Program program = p.ParseProgram();
+        p.checkParserErrors();
+
+        assertEquals(1, program.getStatements().size());
+
+        Statement stmt = program.getStatements().get(0);
+        assertTrue(stmt instanceof ExpressionStatement);
+        
+        ExpressionStatement expressionStatement = (ExpressionStatement) stmt;
+        Expression expression = expressionStatement.getExpression();
+        assertTrue(expression instanceof Identifier);
+        
+        Identifier identifier = (Identifier) expression;
+        assertEquals("imissher", identifier.getValue());
+        assertEquals("imissher", identifier.getTokenLiteral());
+    }
+
+
     @org.junit.Test
     public static void testStatements() throws Exception{
         System.out.println("INT TEST");
-        String input = "BOOL x   \"TRUE\"$\n" +
-                        "BOOL  = \"FALSE\"$\n" +
-                        "BOOL  \"TRUE\"$\n";
+        String input =
+                "BOOL x  = \"TRUE\"$\n" +
+                        "BOOL y = \"FALSE\"$\n" +
+                        "BOOL z =\"TRUE\"$\n";
         Lexer lexer = new Lexer(input);
         Parser parser = new Parser(lexer);
         Program program = parser.ParseProgram();

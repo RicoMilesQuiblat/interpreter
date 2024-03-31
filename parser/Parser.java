@@ -1,11 +1,16 @@
 package parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import ast.BeginStatement;
 import ast.BoolStatement;
 import ast.CharStatement;
+import ast.EndStatement;
+import ast.Expression;
+import ast.ExpressionStatement;
 import ast.Identifier;
 import ast.IntStatement;
 import ast.Program;
@@ -21,10 +26,34 @@ public class Parser {
     private Token curToken;
     private Token peekToken;
     private List<String> errors;
+    private Map<TokenType, PrefixParseFn> prefixParseFns;
+    private Map<TokenType, InfixParseFn> infixParseFns;
+
+    public enum OperatorType{
+        LOWEST(1),
+        EQUALS(2),
+        LESSGREATER(3),
+        SUM(4),
+        PRODUCT(5),
+        PREFIX(6);
+        
+        private final int precedence;
+        OperatorType(int precedence){
+            this.precedence = precedence;
+        }
+
+        public int getPrecedence(){
+            return precedence;
+        }
+    }
+    
 
     public Parser(Lexer lexer){
         this.lexer = lexer;
+        prefixParseFns = new HashMap<>();
+        infixParseFns = new HashMap<>();
         errors = new ArrayList<>();
+        registerPrefix(TokenType.IDENT, this::parseIdentifier);
         nextToken();
         nextToken();
 
@@ -36,7 +65,9 @@ public class Parser {
         peekToken = lexer.nextToken();
     }
 
-    public Program ParseProgram(){
+
+
+    public Program ParseProgram() throws Exception{
         
         Program program = new Program(new ArrayList<>());
 
@@ -53,20 +84,49 @@ public class Parser {
 
     }
 
-    public Statement parseStatement() {
+    public Expression parseIdentifier(){
+        return new Identifier(curToken, curToken.getLiteral());
+    }
+
+    public Statement parseStatement() throws Exception {
+
+
             switch (curToken.getTokenType()){
                 case CHAR:
-                    return parseCharStatement();
+                return parseCharStatement();
                 case INT:
-                    return parseIntStatement();
+                return parseIntStatement();
                 case BOOL:
-                    return parseBoolStatement();
-
+                return parseBoolStatement();
+                
                 default:
-                return null;
+                    return parseExpressionStatement();
                 
             }
         
+    }
+
+
+    public ExpressionStatement parseExpressionStatement() throws Exception{
+        ExpressionStatement stmt = new ExpressionStatement();
+        stmt.setToken(curToken);
+
+        stmt.setExpression(parseExpression(OperatorType.LOWEST.getPrecedence()));
+
+        if(peekTokenIs(TokenType.EOL)){
+            nextToken();
+        }
+        return stmt;
+    }
+   
+    public Expression parseExpression(int precedence) throws Exception{
+        PrefixParseFn prefix = prefixParseFns.get(curToken.getTokenType());
+        if(prefix == null){
+            return null;
+        }
+        Expression leftExp = prefix.apply();
+
+        return leftExp;
     }
 
     public CharStatement parseCharStatement(){
@@ -87,6 +147,7 @@ public class Parser {
         }
         return stmt;
     }
+
 
     public IntStatement parseIntStatement(){
         IntStatement stmt = new IntStatement();
@@ -168,6 +229,14 @@ public class Parser {
     private void peekError(TokenType t){
         String msg = String.format("expected next token to be %s, got %s instead", t, peekToken.getTokenType());
         errors.add(msg);
+    }
+
+    public void registerPrefix(TokenType tokenType, PrefixParseFn fn){
+        prefixParseFns.put(tokenType, fn);
+    }
+
+    public void registerInfix(TokenType tokenType, InfixParseFn fn){
+        infixParseFns.put(tokenType, fn);
     }
     
 }

@@ -1,5 +1,7 @@
 package ast;
 
+import java.util.jar.Attributes.Name;
+
 import token.Token;
 
 public class CharStatement implements Statement {
@@ -50,6 +52,20 @@ public class CharStatement implements Statement {
     @Override
     public String getTokenLiteral() {
         return token.getLiteral();
+    }
+    @Override
+    public String string() {
+        StringBuilder out = new StringBuilder();
+        out.append(token.getLiteral() + " ");
+        out.append(name.toString());
+        out.append(" = ");
+        if(value != null){
+            out.append(value.toString());
+        }
+        out.append("$");
+
+        return out.toString();
+
     }
 
     
