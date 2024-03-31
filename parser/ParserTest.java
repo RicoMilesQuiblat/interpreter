@@ -14,6 +14,7 @@ import ast.CharStatement;
 import ast.Expression;
 import ast.ExpressionStatement;
 import ast.Identifier;
+import ast.InfixExpression;
 import ast.IntegerLiteral;
 import ast.Node;
 import ast.PrefixExpression;
@@ -100,11 +101,22 @@ public class ParserTest {
 
     @org.junit.Test
     public static void testParsingInfixExpressions() throws Exception{
-        List<PrefixTestCase> prefixTests = new ArrayList<>();
-        prefixTests.add(new PrefixTestCase("-15", "-", 15));
+        List<InfixTestCase> infixTests = new ArrayList<>();
+        infixTests.add(new InfixTestCase("5 + 5",5, "+", 5));
+        infixTests.add(new InfixTestCase("5 - 5",5, "-", 5));
+        infixTests.add(new InfixTestCase("5 * 5",5, "*", 5));
+        infixTests.add(new InfixTestCase("5 / 5",5, "/", 5));
+        infixTests.add(new InfixTestCase("5 % 5",5, "%", 5));
+        infixTests.add(new InfixTestCase("5 < 5",5, "<", 5));
+        infixTests.add(new InfixTestCase("5 > 5",5, ">", 5));
+        infixTests.add(new InfixTestCase("5 <= 5",5, "<=", 5));
+        infixTests.add(new InfixTestCase("5 >= 5",5, ">=", 5));
+        infixTests.add(new InfixTestCase("5 == 5",5, "==", 5));
+        infixTests.add(new InfixTestCase("5 <> 5",5, "<>", 5));
+        
 
-        for (PrefixTestCase pt : prefixTests){
-            Lexer lexer = new Lexer(pt.getInput());
+        for (InfixTestCase it : infixTests){
+            Lexer lexer = new Lexer(it.getInput());
             Parser p = new Parser(lexer);
             Program program = p.ParseProgram();
             p.checkParserErrors();
@@ -116,10 +128,19 @@ public class ParserTest {
 
             ExpressionStatement expressionStatement = (ExpressionStatement) stmt;
             Expression expression = expressionStatement.getExpression();
-            assertTrue(expression instanceof PrefixExpression);
+            assertTrue(expression instanceof InfixExpression);
 
-            PrefixExpression prexp = (PrefixExpression) expression;
-            assertEquals(pt.getOperator(), prexp.getOperator());
+            InfixExpression exp = (InfixExpression) expression;
+            
+            if(!testIntegerLiteral(exp.getLeft(), it.getLeftValue())){
+                return;
+            }
+
+            assertEquals(it.getOperator(), exp.getOperator());
+
+            if(!testIntegerLiteral(exp.getRight(), it.getRightValue())){
+                return;
+            }
 
             
         }
@@ -239,6 +260,56 @@ public class ParserTest {
         public void setIntegerValue(int integerValue) {
             this.integerValue = integerValue;
         }
+
+        
+        
+    }
+    private static class InfixTestCase{
+        private String input;
+        private int leftValue;
+        private String operator;
+        private int rightValue;
+        
+        public InfixTestCase(String input, int leftValue, String operator, int rightValue) {
+            this.input = input;
+            this.leftValue = leftValue;
+            this.operator = operator;
+            this.rightValue = rightValue;
+        }
+
+        public String getInput() {
+            return input;
+        }
+
+        public void setInput(String input) {
+            this.input = input;
+        }
+
+        public int getLeftValue() {
+            return leftValue;
+        }
+
+        public void setLeftValue(int leftValue) {
+            this.leftValue = leftValue;
+        }
+
+        public String getOperator() {
+            return operator;
+        }
+
+        public void setOperator(String operator) {
+            this.operator = operator;
+        }
+
+        public int getRightValue() {
+            return rightValue;
+        }
+
+        public void setRightValue(int rightValue) {
+            this.rightValue = rightValue;
+        }
+
+       
 
         
         

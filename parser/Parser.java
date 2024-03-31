@@ -1,5 +1,9 @@
 package parser;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +16,7 @@ import ast.EndStatement;
 import ast.Expression;
 import ast.ExpressionStatement;
 import ast.Identifier;
+import ast.InfixExpression;
 import ast.IntStatement;
 import ast.IntegerLiteral;
 import ast.PrefixExpression;
@@ -30,6 +35,7 @@ public class Parser {
     private List<String> errors;
     private Map<TokenType, PrefixParseFn> prefixParseFns;
     private Map<TokenType, InfixParseFn> infixParseFns;
+    private Map<TokenType, Integer> infixPrecedences;
 
     public enum OperatorType{
         LOWEST(1),
@@ -54,13 +60,44 @@ public class Parser {
         this.lexer = lexer;
         prefixParseFns = new HashMap<>();
         infixParseFns = new HashMap<>();
+        infixPrecedences = new HashMap<>();
+        initPrecedences();
         errors = new ArrayList<>();
-        registerPrefix(TokenType.IDENT, this::parseIdentifier);
-        registerPrefix(TokenType.DIGIT, this::parseIntegerLiteral);
-        registerPrefix(TokenType.SUBTRACT, this::parsePrefixExpression);
+        registerExpressions();
         nextToken();
         nextToken();
 
+    }
+
+    private void initPrecedences(){
+        infixPrecedences.put(TokenType.EQUAL, OperatorType.EQUALS.getPrecedence());
+        infixPrecedences.put(TokenType.NOTEQUAL, OperatorType.EQUALS.getPrecedence());
+        infixPrecedences.put(TokenType.LESS, OperatorType.LESSGREATER.getPrecedence());
+        infixPrecedences.put(TokenType.GREAT, OperatorType.LESSGREATER.getPrecedence());
+        infixPrecedences.put(TokenType. LESSEQ, OperatorType.LESSGREATER.getPrecedence());
+        infixPrecedences.put(TokenType.GREATEQ, OperatorType.LESSGREATER.getPrecedence());
+        infixPrecedences.put(TokenType.PLUS, OperatorType.SUM.getPrecedence());
+        infixPrecedences.put(TokenType.SUBTRACT, OperatorType.SUM.getPrecedence());
+        infixPrecedences.put(TokenType.MULTIPLY, OperatorType.PRODUCT.getPrecedence());
+        infixPrecedences.put(TokenType.DIVIDE, OperatorType.PRODUCT.getPrecedence());
+        infixPrecedences.put(TokenType.MODULO, OperatorType.PRODUCT.getPrecedence());
+    }
+
+    private void registerExpressions(){
+        registerPrefix(TokenType.IDENT, this::parseIdentifier);
+        registerPrefix(TokenType.DIGIT, this::parseIntegerLiteral);
+        registerPrefix(TokenType.SUBTRACT, this::parsePrefixExpression);
+        registerInfix(TokenType.PLUS, this::parseInfixExpression);
+        registerInfix(TokenType.SUBTRACT, this::parseInfixExpression);
+        registerInfix(TokenType.MULTIPLY, this::parseInfixExpression);
+        registerInfix(TokenType.DIVIDE, this::parseInfixExpression);
+        registerInfix(TokenType.MODULO, this::parseInfixExpression);
+        registerInfix(TokenType.EQUAL, this::parseInfixExpression);
+        registerInfix(TokenType.NOTEQUAL, this::parseInfixExpression);
+        registerInfix(TokenType.GREAT, this::parseInfixExpression);
+        registerInfix(TokenType.LESS, this::parseInfixExpression);
+        registerInfix(TokenType.GREATEQ, this::parseInfixExpression);
+        registerInfix(TokenType.LESSEQ, this::parseInfixExpression);
     }
 
 
@@ -148,6 +185,15 @@ public class Parser {
         }
         Expression leftExp = prefix.apply();
 
+        while(!peekTokenIs(TokenType.EOL) && precedence < peekPrecedence()){
+            InfixParseFn infix = infixParseFns.get(peekToken.getTokenType());
+            if(infix == null){
+                return leftExp;
+            }
+            nextToken();
+            leftExp = infix.apply(leftExp);
+        }
+
         return leftExp;
     }
 
@@ -183,6 +229,22 @@ public class Parser {
             e.printStackTrace();
         }
 
+        return expression;
+    }
+
+    public Expression parseInfixExpression(Expression left){
+        InfixExpression expression = new InfixExpression();
+        expression.setToken(curToken);
+        expression.setOperator(curToken.getLiteral());
+        expression.setLeft(left);
+
+        int precedence = curPrecedence();
+        nextToken();
+        try {
+            expression.setRight(parseExpression(precedence));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return expression;
     }
 
@@ -225,15 +287,15 @@ public class Parser {
         return stmt;
     }
     
-
+    
     private boolean curTokenIs(TokenType t){
         return curToken.getTokenType() == t;
     }
-
+    
     private boolean peekTokenIs(TokenType t){
         return peekToken.getTokenType() == t;
     }
-
+    
     private boolean expectPeek(TokenType t){
         if(peekTokenIs(t)){
             nextToken();
@@ -244,6 +306,24 @@ public class Parser {
         }
     }
 
+    private int curPrecedence(){
+        Integer p = infixPrecedences.get(curToken.getTokenType());
+        if(p != null){
+            return p.intValue();
+        }
+
+        return OperatorType.LOWEST.getPrecedence();
+    }
+
+    private int peekPrecedence(){
+        Integer p = infixPrecedences.get(peekToken.getTokenType());
+        if(p != null){
+            return p.intValue();
+        }
+        return OperatorType.LOWEST.getPrecedence();
+
+    }
+    
     public List<String> getErrors(){
         return errors;
     }
@@ -265,7 +345,7 @@ public class Parser {
     }
 
     public void noPrefixParseFNError(TokenType t){
-        String msg = String.format("no prefix parse function for %s found", t);
+        String msg = String.format("no prefix parse function for %s found", t.getLiteral());
         errors.add(msg);
     }
 
@@ -273,6 +353,7 @@ public class Parser {
         String msg = String.format("expected next token to be %s, got %s instead", t, peekToken.getTokenType());
         errors.add(msg);
     }
+
 
     public void registerPrefix(TokenType tokenType, PrefixParseFn fn){
         prefixParseFns.put(tokenType, fn);
