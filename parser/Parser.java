@@ -14,6 +14,7 @@ import ast.ExpressionStatement;
 import ast.Identifier;
 import ast.IntStatement;
 import ast.IntegerLiteral;
+import ast.PrefixExpression;
 import ast.Program;
 import lexer.Lexer;
 import token.Token;
@@ -56,6 +57,7 @@ public class Parser {
         errors = new ArrayList<>();
         registerPrefix(TokenType.IDENT, this::parseIdentifier);
         registerPrefix(TokenType.DIGIT, this::parseIntegerLiteral);
+        registerPrefix(TokenType.SUBTRACT, this::parsePrefixExpression);
         nextToken();
         nextToken();
 
@@ -141,6 +143,7 @@ public class Parser {
     public Expression parseExpression(int precedence) throws Exception{
         PrefixParseFn prefix = prefixParseFns.get(curToken.getTokenType());
         if(prefix == null){
+            noPrefixParseFNError(curToken.getTokenType());
             return null;
         }
         Expression leftExp = prefix.apply();
@@ -165,6 +168,22 @@ public class Parser {
             nextToken();
         }
         return stmt;
+    }
+
+    public Expression parsePrefixExpression(){
+        PrefixExpression expression = new PrefixExpression();
+        expression.setToken(curToken);
+        expression.setOperator(curToken.getLiteral());
+
+        nextToken();
+
+        try {
+            expression.setRight(parseExpression(OperatorType.PREFIX.getPrecedence()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return expression;
     }
 
 
@@ -243,6 +262,11 @@ public class Parser {
         Assert.fail(message.toString());
         
 
+    }
+
+    public void noPrefixParseFNError(TokenType t){
+        String msg = String.format("no prefix parse function for %s found", t);
+        errors.add(msg);
     }
 
     private void peekError(TokenType t){

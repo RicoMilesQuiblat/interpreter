@@ -16,6 +16,7 @@ import ast.ExpressionStatement;
 import ast.Identifier;
 import ast.IntegerLiteral;
 import ast.Node;
+import ast.PrefixExpression;
 import ast.Program;
 import ast.Statement;
 import lexer.Lexer;
@@ -67,6 +68,73 @@ public class ParserTest {
         IntegerLiteral identifier = (IntegerLiteral) expression;
         assertEquals(5, identifier.getValue());
         assertEquals("5", identifier.getTokenLiteral());
+    }
+
+    @org.junit.Test
+    public static void testParsingPrefixExpressions() throws Exception{
+        List<PrefixTestCase> prefixTests = new ArrayList<>();
+        prefixTests.add(new PrefixTestCase("-15", "-", 15));
+
+        for (PrefixTestCase pt : prefixTests){
+            Lexer lexer = new Lexer(pt.getInput());
+            Parser p = new Parser(lexer);
+            Program program = p.ParseProgram();
+            p.checkParserErrors();
+
+            assertEquals(1, program.getStatements().size());
+
+            Statement stmt = program.getStatements().get(0);
+            assertTrue(stmt instanceof ExpressionStatement);
+
+            ExpressionStatement expressionStatement = (ExpressionStatement) stmt;
+            Expression expression = expressionStatement.getExpression();
+            assertTrue(expression instanceof PrefixExpression);
+
+            PrefixExpression prexp = (PrefixExpression) expression;
+            assertEquals(pt.getOperator(), prexp.getOperator());
+
+            
+        }
+
+    }
+
+    @org.junit.Test
+    public static void testParsingInfixExpressions() throws Exception{
+        List<PrefixTestCase> prefixTests = new ArrayList<>();
+        prefixTests.add(new PrefixTestCase("-15", "-", 15));
+
+        for (PrefixTestCase pt : prefixTests){
+            Lexer lexer = new Lexer(pt.getInput());
+            Parser p = new Parser(lexer);
+            Program program = p.ParseProgram();
+            p.checkParserErrors();
+
+            assertEquals(1, program.getStatements().size());
+
+            Statement stmt = program.getStatements().get(0);
+            assertTrue(stmt instanceof ExpressionStatement);
+
+            ExpressionStatement expressionStatement = (ExpressionStatement) stmt;
+            Expression expression = expressionStatement.getExpression();
+            assertTrue(expression instanceof PrefixExpression);
+
+            PrefixExpression prexp = (PrefixExpression) expression;
+            assertEquals(pt.getOperator(), prexp.getOperator());
+
+            
+        }
+
+    }
+
+    @org.junit.Test
+    public static boolean testIntegerLiteral(Expression ex, int value){
+        IntegerLiteral integer = (IntegerLiteral) ex;
+        assertTrue(integer instanceof IntegerLiteral);
+
+        assertEquals(integer.getValue(), value);
+        assertEquals(integer.getTokenLiteral(), Integer.toString(value));
+
+        return true;
     }
 
 
@@ -134,6 +202,46 @@ public class ParserTest {
             System.out.println(String.format("Literal = ", charStmt.getTokenLiteral()));
         }
         return true;
+    }
+
+
+    private static class PrefixTestCase{
+        private String input;
+        private String operator;
+        private int integerValue;
+
+        public PrefixTestCase(String input, String operator, int integerValue) {
+            this.input = input;
+            this.operator = operator;
+            this.integerValue = integerValue;
+        }
+
+        public String getInput() {
+            return input;
+        }
+
+        public void setInput(String input) {
+            this.input = input;
+        }
+
+        public String getOperator() {
+            return operator;
+        }
+
+        public void setOperator(String operator) {
+            this.operator = operator;
+        }
+
+        public int getIntegerValue() {
+            return integerValue;
+        }
+
+        public void setIntegerValue(int integerValue) {
+            this.integerValue = integerValue;
+        }
+
+        
+        
     }
 
 
