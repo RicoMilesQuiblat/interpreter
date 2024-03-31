@@ -2,7 +2,6 @@ package ast;
 
 import java.util.List;
 
-import javax.swing.plaf.nimbus.State;
 
 public class Program implements Node{
     private List<Statement> statements;
@@ -36,7 +35,7 @@ public class Program implements Node{
     public String string() {
         StringBuilder out = new StringBuilder();
         for(Statement s: statements){
-            out.append(s.toString());
+            out.append(s.string());
         }
         
 

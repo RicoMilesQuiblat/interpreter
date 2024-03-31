@@ -10,7 +10,9 @@ public class Main {
         // ParserTest.testIdentifierExpression();
         // ParserTest.testIntegerLiteralExpression();
         // ParserTest.testParsingPrefixExpressions();
-        ParserTest.testParsingInfixExpressions();
+        // ParserTest.testParsingInfixExpressions();
+        // ParserTest.testPrecedenceParsing();
+        
         
     }
 }

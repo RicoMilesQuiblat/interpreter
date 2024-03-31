@@ -31,7 +31,7 @@ public class ExpressionStatement implements Statement {
     @Override
     public String string() {
         if(expression != null){
-            return expression.toString();
+            return expression.string();
         }
         return "";
     }

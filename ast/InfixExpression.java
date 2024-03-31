@@ -79,9 +79,9 @@ public class InfixExpression implements Expression{
         StringBuilder out = new StringBuilder();
 
         out.append("(");
-        out.append(left.toString());
+        out.append(left.string());
         out.append(" " + operator + " ");
-        out.append(right.toString());
+        out.append(right.string());
         out.append(")");
 
         return out.toString();

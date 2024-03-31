@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Test;
 
 import ast.BoolStatement;
 import ast.CharStatement;
@@ -23,19 +24,63 @@ import ast.Statement;
 import lexer.Lexer;
 
 
+
 public class ParserTest {
+
+
+    @org.junit.Test
+    public static boolean testIndentifier(Expression exp, String value){
+        assertTrue(exp instanceof Identifier);
+        Identifier ident = (Identifier) exp;
+
+        assertEquals(ident.getValue(), value);
+
+        assertEquals(ident.getTokenLiteral(), value);
+
+        return true;
+    }
+
+    @org.junit.Test
+    public static boolean testLiteralExpression(Expression exp, Object expected){
+        if(expected instanceof Integer){
+            return testIndentifier(exp, Integer.toString((int)expected));
+        }else if(expected instanceof String){
+            return testIndentifier(exp, (String)expected);
+        }
+        System.err.println(String.format("type of exp not handled. got = %T", exp));
+        return false;
+    }
+
+    @org.junit.Test
+    public static boolean testInfixExpression(Expression exp, Object left, String operator, Object right){
+        assertTrue(exp instanceof InfixExpression);
+        InfixExpression opExp = (InfixExpression) exp;
+
+        if(!testLiteralExpression(opExp.getLeft(), left)){
+            return false;
+        }
+
+        assertEquals(opExp.getOperator(), operator);
+
+        if(!testLiteralExpression(opExp.getRight(), right)){
+            return false;
+        }
+        return true;
+    }
+
+
 
     @org.junit.Test
     public static void testIdentifierExpression() throws Exception{
         String input = "imissher$";
-
+        
         Lexer l = new Lexer(input);
         Parser p = new Parser(l);
         Program program = p.ParseProgram();
         p.checkParserErrors();
-
+        
         assertEquals(1, program.getStatements().size());
-
+        
         Statement stmt = program.getStatements().get(0);
         assertTrue(stmt instanceof ExpressionStatement);
         
@@ -48,6 +93,57 @@ public class ParserTest {
         assertEquals("imissher", identifier.getTokenLiteral());
     }
 
+    @org.junit.Test
+    public static void testPrecedenceParsing() throws Exception{
+        List<PrecedenceTestCase> precedenceTests = new ArrayList<>();
+        precedenceTests.add(new PrecedenceTestCase("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"));
+
+        for (PrecedenceTestCase ptc: precedenceTests){
+            Lexer lexer = new Lexer(ptc.getInput());
+            Parser parser = new Parser(lexer);
+            Program program = parser.ParseProgram();
+            parser.checkParserErrors();
+
+            String actual = program.string().toString();
+            
+            assertEquals(ptc.expected, actual);
+
+
+            System.out.println(String.format("Input Expression: %s", ptc.getInput()));
+            System.out.println(String.format("Parsing Result: %s", actual));
+
+        }
+    }
+
+    
+    @org.junit.Test
+    public static void testParsingPrefixExpressions() throws Exception{
+        List<PrefixTestCase> prefixTests = new ArrayList<>();
+        prefixTests.add(new PrefixTestCase("-15", "-", 15));
+        
+        for (PrefixTestCase pt : prefixTests){
+            Lexer lexer = new Lexer(pt.getInput());
+            Parser p = new Parser(lexer);
+            Program program = p.ParseProgram();
+            p.checkParserErrors();
+            
+            assertEquals(1, program.getStatements().size());
+            
+            Statement stmt = program.getStatements().get(0);
+            assertTrue(stmt instanceof ExpressionStatement);
+            
+            ExpressionStatement expressionStatement = (ExpressionStatement) stmt;
+            Expression expression = expressionStatement.getExpression();
+            assertTrue(expression instanceof PrefixExpression);
+            
+            PrefixExpression prexp = (PrefixExpression) expression;
+            assertEquals(pt.getOperator(), prexp.getOperator());
+            
+            
+        }
+        
+    }
+    
     @org.junit.Test
     public static void testIntegerLiteralExpression() throws Exception{
         String input = "5$";
@@ -70,35 +166,6 @@ public class ParserTest {
         assertEquals(5, identifier.getValue());
         assertEquals("5", identifier.getTokenLiteral());
     }
-
-    @org.junit.Test
-    public static void testParsingPrefixExpressions() throws Exception{
-        List<PrefixTestCase> prefixTests = new ArrayList<>();
-        prefixTests.add(new PrefixTestCase("-15", "-", 15));
-
-        for (PrefixTestCase pt : prefixTests){
-            Lexer lexer = new Lexer(pt.getInput());
-            Parser p = new Parser(lexer);
-            Program program = p.ParseProgram();
-            p.checkParserErrors();
-
-            assertEquals(1, program.getStatements().size());
-
-            Statement stmt = program.getStatements().get(0);
-            assertTrue(stmt instanceof ExpressionStatement);
-
-            ExpressionStatement expressionStatement = (ExpressionStatement) stmt;
-            Expression expression = expressionStatement.getExpression();
-            assertTrue(expression instanceof PrefixExpression);
-
-            PrefixExpression prexp = (PrefixExpression) expression;
-            assertEquals(pt.getOperator(), prexp.getOperator());
-
-            
-        }
-
-    }
-
     @org.junit.Test
     public static void testParsingInfixExpressions() throws Exception{
         List<InfixTestCase> infixTests = new ArrayList<>();
@@ -144,6 +211,7 @@ public class ParserTest {
 
             
         }
+        
 
     }
 
@@ -261,9 +329,30 @@ public class ParserTest {
             this.integerValue = integerValue;
         }
 
+    }
+    private static class PrecedenceTestCase{
+        private String input;
+        private String expected;
+        public PrecedenceTestCase(String input, String expected) {
+            this.input = input;
+            this.expected = expected;
+        }
+        public String getInput() {
+            return input;
+        }
+        public void setInput(String input) {
+            this.input = input;
+        }
+        public String getExpected() {
+            return expected;
+        }
+        public void setExpected(String expected) {
+            this.expected = expected;
+        }
         
         
     }
+        
     private static class InfixTestCase{
         private String input;
         private int leftValue;

@@ -147,6 +147,7 @@ public class Parser {
     }
 
     public Expression parseIntegerLiteral(){
+        System.out.println("Begin parseIntegralLiteral");
         IntegerLiteral literal = new IntegerLiteral();
         literal.setToken(curToken);
         int value;
@@ -160,12 +161,14 @@ public class Parser {
         }
 
         literal.setValue(value);
+        System.out.println("END parseIntegralLiteral");
         return literal;
 
     }
 
 
     public ExpressionStatement parseExpressionStatement() throws Exception{
+        System.out.println("Begin parseExpressionStatement");
         ExpressionStatement stmt = new ExpressionStatement();
         stmt.setToken(curToken);
 
@@ -174,13 +177,16 @@ public class Parser {
         if(peekTokenIs(TokenType.EOL)){
             nextToken();
         }
+        System.out.println("END parseExpressionStatement\n\n\n\n\n\n");
         return stmt;
     }
    
     public Expression parseExpression(int precedence) throws Exception{
+        System.out.println("Begin parseExpression");
         PrefixParseFn prefix = prefixParseFns.get(curToken.getTokenType());
         if(prefix == null){
             noPrefixParseFNError(curToken.getTokenType());
+            System.out.println("END parseExpression");
             return null;
         }
         Expression leftExp = prefix.apply();
@@ -188,12 +194,13 @@ public class Parser {
         while(!peekTokenIs(TokenType.EOL) && precedence < peekPrecedence()){
             InfixParseFn infix = infixParseFns.get(peekToken.getTokenType());
             if(infix == null){
+                System.out.println("END parseExpression");
                 return leftExp;
             }
             nextToken();
             leftExp = infix.apply(leftExp);
         }
-
+        System.out.println("END parseExpression");
         return leftExp;
     }
 
@@ -217,6 +224,7 @@ public class Parser {
     }
 
     public Expression parsePrefixExpression(){
+        System.out.println("Begin parsePrefixExpression");
         PrefixExpression expression = new PrefixExpression();
         expression.setToken(curToken);
         expression.setOperator(curToken.getLiteral());
@@ -228,11 +236,13 @@ public class Parser {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        System.out.println("END parsePrefixExpression");
 
         return expression;
     }
 
     public Expression parseInfixExpression(Expression left){
+        System.out.println("Begin parseInfixExpression");
         InfixExpression expression = new InfixExpression();
         expression.setToken(curToken);
         expression.setOperator(curToken.getLiteral());
