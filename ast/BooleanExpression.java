@@ -18,7 +18,7 @@ public class BooleanExpression implements Expression{
     public void setToken(Token token) {
         this.token = token;
     }
-    public boolean isValue() {
+    public boolean getValue() {
         return value;
     }
     public void setValue(boolean value) {

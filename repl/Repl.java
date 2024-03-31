@@ -7,6 +7,8 @@ import java.io.PrintWriter;
 import java.util.List;
 
 import ast.Program;
+import object.Object;
+import evaluator.Evaluator;
 import lexer.Lexer;
 import parser.Parser;
 import token.Token;
@@ -42,6 +44,11 @@ public class Repl {
             if(p.getErrors().size() != 0){
                 printParserErrors(out, p.getErrors());
                 continue;
+            }
+
+            Object evaluated = Evaluator.eval(program);
+            if(evaluated == null){
+                out.println(evaluated.inspect());
             }
             
             out.println(program.string());
