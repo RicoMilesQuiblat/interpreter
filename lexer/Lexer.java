@@ -106,6 +106,9 @@ public class Lexer {
             case ']':
                 tok = newToken(TokenType.RESCAPE, ch);
                 break;
+            case '$':
+                tok = newToken(TokenType.EOL, ch);
+                break;
             case '\'':
                 readChar();
                 char tempCh = ch;

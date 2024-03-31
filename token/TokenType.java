@@ -37,9 +37,12 @@ public enum TokenType {
     CHAR("CHAR"),
     BOOL("BOOL"),
     FLOAT("FLOAT"),
-    COMMENT("#"),
     DISPLAY("DISPLAY:"),
-    SCAN("SCAN:");
+    SCAN("SCAN:"),
+    
+    //SPECIAL
+    COMMENT("#"),
+    EOL("$");
 
 
 
