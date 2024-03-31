@@ -13,6 +13,7 @@ import ast.Expression;
 import ast.ExpressionStatement;
 import ast.Identifier;
 import ast.IntStatement;
+import ast.IntegerLiteral;
 import ast.Program;
 import lexer.Lexer;
 import token.Token;
@@ -54,6 +55,7 @@ public class Parser {
         infixParseFns = new HashMap<>();
         errors = new ArrayList<>();
         registerPrefix(TokenType.IDENT, this::parseIdentifier);
+        registerPrefix(TokenType.DIGIT, this::parseIntegerLiteral);
         nextToken();
         nextToken();
 
@@ -98,12 +100,29 @@ public class Parser {
                 return parseIntStatement();
                 case BOOL:
                 return parseBoolStatement();
-                
                 default:
                     return parseExpressionStatement();
                 
             }
         
+    }
+
+    public Expression parseIntegerLiteral(){
+        IntegerLiteral literal = new IntegerLiteral();
+        literal.setToken(curToken);
+        int value;
+        try{
+            value = Integer.parseInt(curToken.getLiteral(), 10);
+        }catch(NumberFormatException e){
+            String msg = String.format("Could not parse %s as integer", curToken.getLiteral());
+            System.err.println(msg);
+            errors.add(msg);
+            return null;
+        }
+
+        literal.setValue(value);
+        return literal;
+
     }
 
 

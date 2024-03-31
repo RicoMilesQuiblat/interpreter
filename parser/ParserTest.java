@@ -14,6 +14,7 @@ import ast.CharStatement;
 import ast.Expression;
 import ast.ExpressionStatement;
 import ast.Identifier;
+import ast.IntegerLiteral;
 import ast.Node;
 import ast.Program;
 import ast.Statement;
@@ -24,7 +25,7 @@ public class ParserTest {
 
     @org.junit.Test
     public static void testIdentifierExpression() throws Exception{
-        String input = "imissher";
+        String input = "imissher$";
 
         Lexer l = new Lexer(input);
         Parser p = new Parser(l);
@@ -43,6 +44,29 @@ public class ParserTest {
         Identifier identifier = (Identifier) expression;
         assertEquals("imissher", identifier.getValue());
         assertEquals("imissher", identifier.getTokenLiteral());
+    }
+
+    @org.junit.Test
+    public static void testIntegerLiteralExpression() throws Exception{
+        String input = "5$";
+
+        Lexer l = new Lexer(input);
+        Parser p = new Parser(l);
+        Program program = p.ParseProgram();
+        p.checkParserErrors();
+
+        assertEquals(1, program.getStatements().size());
+
+        Statement stmt = program.getStatements().get(0);
+        assertTrue(stmt instanceof ExpressionStatement);
+        
+        ExpressionStatement expressionStatement = (ExpressionStatement) stmt;
+        Expression expression = expressionStatement.getExpression();
+        assertTrue(expression instanceof IntegerLiteral);
+        
+        IntegerLiteral identifier = (IntegerLiteral) expression;
+        assertEquals(5, identifier.getValue());
+        assertEquals("5", identifier.getTokenLiteral());
     }
 
 

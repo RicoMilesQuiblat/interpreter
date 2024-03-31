@@ -7,7 +7,8 @@ public class Main {
         // Repl.Start();
 
         // ParserTest.testCharStatements();
-        ParserTest.testIdentifierExpression();
+        // ParserTest.testIdentifierExpression();
+        ParserTest.testIntegerLiteralExpression();
         
     }
 }
