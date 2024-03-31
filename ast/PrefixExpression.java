@@ -56,7 +56,7 @@ public class PrefixExpression implements Expression{
         StringBuilder out = new StringBuilder();
         out.append("(");
         out.append(operator);
-        out.append(right.toString());
+        out.append(right.string());
         out.append(")");
 
         return out.toString();

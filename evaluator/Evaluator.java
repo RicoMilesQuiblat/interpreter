@@ -6,8 +6,10 @@ import java.util.List;
 import ast.BooleanExpression;
 import ast.CharacterExpression;
 import ast.ExpressionStatement;
+import ast.InfixExpression;
 import ast.IntegerLiteral;
 import ast.Node;
+import ast.PrefixExpression;
 import ast.Program;
 import ast.Statement;
 import object.BooleanObject;
@@ -42,6 +44,15 @@ public class Evaluator {
         }else if(node instanceof BooleanExpression){
             BooleanExpression be = (BooleanExpression)node;
             return nativeBoolToBooleanObject(be.getValue());
+        }else if(node instanceof PrefixExpression){
+            PrefixExpression pe = (PrefixExpression)node;
+            Object right = eval(pe.getRight());
+            return evalPrefixExpression(pe.getOperator(), right);
+        }else if(node instanceof InfixExpression){
+            InfixExpression ie = (InfixExpression)node;
+            Object left = eval(ie.getLeft());
+            Object right = eval(ie.getRight());
+            return evalInfixExpression(ie.getOperator(), left, right);
         }
         return NULL;
     }
@@ -61,5 +72,66 @@ public class Evaluator {
         return FALSE;
 
     }
+
+    private static Object evalInfixExpression(String operator, Object left, Object right){
+        if(left.type().equals(ObjectType.INTEGER_OBJ) && right.type().equals(ObjectType.INTEGER_OBJ)){
+            return evalIntegerInfixExpression(operator, left, right);
+        }
+        return NULL;
+    }
+
+    private static Object evalIntegerInfixExpression(String operator, Object left, Object right){
+        IntegerObject leftObj = (IntegerObject)left;
+        IntegerObject rightObj = (IntegerObject)right;
+
+        int leftVal = leftObj.getValue();
+        int rightVal = rightObj.getValue();
+
+        switch (operator){
+            case "+":
+                return new IntegerObject(leftVal + rightVal);
+            case "-":
+                return new IntegerObject(leftVal - rightVal);
+            case "*":
+                return new IntegerObject(leftVal * rightVal);
+            case "/":
+                return new IntegerObject(leftVal / rightVal);
+            case "%":
+                return new IntegerObject(leftVal % rightVal);
+            case ">":
+                return nativeBoolToBooleanObject(leftVal > rightVal);
+            case "<":
+                return nativeBoolToBooleanObject(leftVal < rightVal);
+            case ">=":
+                return nativeBoolToBooleanObject(leftVal >= rightVal);
+            case "<=":
+                return nativeBoolToBooleanObject(leftVal <= rightVal);
+            case "==":
+                return nativeBoolToBooleanObject(leftVal == rightVal);
+            case "<>":
+                return nativeBoolToBooleanObject(leftVal != rightVal);
+            default:
+            return NULL;
+        }
+    }
     
+    private static Object evalPrefixExpression(String operator, Object right){
+        switch (operator){
+            case "-":
+                
+                return evalMinusPrefixOperatorExpression(right);
+            default:
+                return NULL;
+        }
+    }
+
+    private static Object evalMinusPrefixOperatorExpression(Object right){
+        if(!(right.type().equals(ObjectType.INTEGER_OBJ)) ){
+            return NULL;
+        }
+        
+        IntegerObject obj = (IntegerObject)right;
+        int value = obj.getValue();
+        return new IntegerObject(value * -1);
+    }
 }

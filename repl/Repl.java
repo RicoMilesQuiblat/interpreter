@@ -47,11 +47,10 @@ public class Repl {
             }
 
             Object evaluated = Evaluator.eval(program);
-            if(evaluated == null){
+            if(evaluated != null){
                 out.println(evaluated.inspect());
             }
             
-            out.println(program.string());
             out.flush();
             
 

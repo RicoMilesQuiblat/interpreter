@@ -17,7 +17,7 @@ public class BooleanObject implements Object{
 
     @Override
     public String inspect() {
-        return String.format("%t", value);
+        return String.format("%b", value);
     }
 
     @Override

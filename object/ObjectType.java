@@ -5,7 +5,8 @@ public enum ObjectType {
     INTEGER_OBJ("INTEGER"),
     BOOLEAN_OBJ("BOOLEAN"),
     CHARACTER_OBJ("CHARACTER"),
-    NULL_OBJ("NULL");
+    NULL_OBJ("NULL"),
+    ERROR_OBJ("ERROR");
 
     private String name;
 
