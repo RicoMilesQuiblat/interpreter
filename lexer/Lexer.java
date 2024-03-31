@@ -127,7 +127,14 @@ public class Lexer {
             
             case '\"':
                 tok.setLiteral(readBoolean());
-                tok.setTokenType(TokenType.BOOLEAN);
+                if(tok.getLiteral().equals("TRUE")){
+                    tok.setTokenType(TokenType.TRUE);
+                }else if(tok.getLiteral().equals("FALSE")){
+                    tok.setTokenType(TokenType.FALSE);
+                }else{
+                    tok.setLiteral("");
+                    tok.setTokenType(TokenType.ILLEGAL);
+                }
                 break;
             case 0:
                 tok.setLiteral("");

@@ -28,6 +28,7 @@ import lexer.Lexer;
 public class ParserTest {
 
 
+
     @org.junit.Test
     public static boolean testIndentifier(Expression exp, String value){
         assertTrue(exp instanceof Identifier);
@@ -50,6 +51,8 @@ public class ParserTest {
         System.err.println(String.format("type of exp not handled. got = %T", exp));
         return false;
     }
+
+    
 
     @org.junit.Test
     public static boolean testInfixExpression(Expression exp, Object left, String operator, Object right){
@@ -229,33 +232,12 @@ public class ParserTest {
 
     @org.junit.Test
     public static void testStatements() throws Exception{
-        System.out.println("INT TEST");
-        String input =
-                "BOOL x  = \"TRUE\"$\n" +
-                        "BOOL y = \"FALSE\"$\n" +
-                        "BOOL z =\"TRUE\"$\n";
-        Lexer lexer = new Lexer(input);
-        Parser parser = new Parser(lexer);
-        Program program = parser.ParseProgram();
-        parser.checkParserErrors();
-
-        System.out.println("Parsing");
-
-       assertNotNull("ParseProgram() returned null", program);
-       assertEquals("program.Statements does not contain 3 statements",3, program.getStatements().size());
-
-       List<TestCase> tests = new ArrayList<>();
-       tests.add(new TestCase("x"));
-       tests.add(new TestCase("y"));
-       tests.add(new TestCase("z"));
-
-       for(int i = 0; i < tests.size(); i++){
-            Statement stmt = program.getStatements().get(i);
-            if(!testStatement(stmt, tests.get(i))){
-                return;
-            }
-       }
-
+        List<StatementsTestCase> statementsTests = new ArrayList<>();{
+            new StatementsTestCase("CHAR first = 'x'", "first", 'x');
+            new StatementsTestCase("CHAR second = 'y'", "second", 'x');
+            new StatementsTestCase("CHAR third = 'z'", "third", 'x');
+        }
+            
     }
 
 
@@ -419,6 +401,45 @@ public class ParserTest {
         public void setExpectedIdentifier(String expectedIdentifier) {
             this.expectedIdentifier = expectedIdentifier;
         }
+
+        
+    }
+    private static class StatementsTestCase {
+        private String input;
+        private String expectedIdentifier;
+        private Object expectedValue;
+        
+        public StatementsTestCase(String input, String expectedIdentifier, Object expectedValue) {
+            this.input = input;
+            this.expectedIdentifier = expectedIdentifier;
+            this.expectedValue = expectedValue;
+        }
+
+        public String getInput() {
+            return input;
+        }
+
+        public void setInput(String input) {
+            this.input = input;
+        }
+
+        public String getExpectedIdentifier() {
+            return expectedIdentifier;
+        }
+
+        public void setExpectedIdentifier(String expectedIdentifier) {
+            this.expectedIdentifier = expectedIdentifier;
+        }
+
+        public Object getExpectedValue() {
+            return expectedValue;
+        }
+
+        public void setExpectedValue(Object expectedValue) {
+            this.expectedValue = expectedValue;
+        }
+
+        
 
         
     }

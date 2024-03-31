@@ -57,10 +57,10 @@ public class CharStatement implements Statement {
     public String string() {
         StringBuilder out = new StringBuilder();
         out.append(token.getLiteral() + " ");
-        out.append(name.toString());
+        out.append(name.string());
         out.append(" = ");
         if(value != null){
-            out.append(value.toString());
+            out.append(value.string());
         }
         out.append("$");
 

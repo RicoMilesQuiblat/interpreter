@@ -52,7 +52,15 @@ public class BoolStatement  implements Statement{
     }
     @Override
     public String string() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'string'");
+        StringBuilder out = new StringBuilder();
+        out.append(token.getLiteral() + " ");
+        out.append(name.string());
+        out.append(" = ");
+        if(value != null){
+            out.append(value.string());
+        }
+        out.append("$");
+
+        return out.toString();
     }
 }
