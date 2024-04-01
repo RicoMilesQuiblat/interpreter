@@ -8,6 +8,7 @@ import java.util.List;
 
 import ast.Program;
 import lexer.Lexer;
+import object.Environment;
 import object.IntegerObject;
 import object.Object;
 import parser.Parser;
@@ -32,6 +33,7 @@ public class EvaluatorTest {
         Lexer l = new Lexer(input);
         Parser p = new Parser(l);
         Program program = new Program();
+        Environment env = new Environment();
         try {
             program = p.ParseProgram();
         } catch (Exception e) {
@@ -39,7 +41,8 @@ public class EvaluatorTest {
             e.printStackTrace();
         }
         
-        return Evaluator.eval(program);
+        
+        return Evaluator.eval(program, env);
     }
 
     private static boolean testIntegerObject(Object obj, int expected){

@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.util.List;
 
 import ast.Program;
+import object.Environment;
 import object.Object;
 import evaluator.Evaluator;
 import lexer.Lexer;
@@ -22,6 +23,7 @@ public class Repl {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter out = new PrintWriter(System.out);
+        Environment env = new Environment();
 
         for(;;){
             out.print(PROMPT);
@@ -46,7 +48,7 @@ public class Repl {
                 continue;
             }
 
-            Object evaluated = Evaluator.eval(program);
+            Object evaluated = Evaluator.eval(program, env);
             if(evaluated != null){
                 out.println(evaluated.inspect());
             }

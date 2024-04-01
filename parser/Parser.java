@@ -9,12 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import ast.BeginStatement;
+import ast.BeginExpression;
+import ast.BlockStatement;
 import ast.BoolStatement;
 import ast.BooleanExpression;
 import ast.CharStatement;
 import ast.CharacterExpression;
-import ast.EndStatement;
 import ast.Expression;
 import ast.ExpressionStatement;
 import ast.Identifier;
@@ -39,6 +39,7 @@ public class Parser {
     private Map<TokenType, InfixParseFn> infixParseFns;
     private Map<TokenType, Integer> infixPrecedences;
 
+
     public enum OperatorType{
         LOWEST(1),
         EQUALS(2),
@@ -56,6 +57,7 @@ public class Parser {
             return precedence;
         }
     }
+    private List<String> reservedWords;
     
 
     public Parser(Lexer lexer){
@@ -63,7 +65,9 @@ public class Parser {
         prefixParseFns = new HashMap<>();
         infixParseFns = new HashMap<>();
         infixPrecedences = new HashMap<>();
+        reservedWords = new ArrayList<>();
         initPrecedences();
+        initReservedWords();
         errors = new ArrayList<>();
         registerExpressions();
         nextToken();
@@ -85,7 +89,19 @@ public class Parser {
         infixPrecedences.put(TokenType.MODULO, OperatorType.PRODUCT.getPrecedence());
     }
 
+    private void initReservedWords(){
+        reservedWords.add("CHAR");
+        reservedWords.add("INT");
+        reservedWords.add("BOOL");
+        reservedWords.add("FLOAT");
+        reservedWords.add("DISPLAY");
+        reservedWords.add("SCAN");
+        reservedWords.add("BEGIN");
+        reservedWords.add("END");
+    }
+
     private void registerExpressions(){
+        registerPrefix(TokenType.START, this::parseBeginExpression) ;
         registerPrefix(TokenType.IDENT, this::parseIdentifier);
         registerPrefix(TokenType.DIGIT, this::parseIntegerLiteral);
         registerPrefix(TokenType.SUBTRACT, this::parsePrefixExpression);
@@ -159,6 +175,51 @@ public class Parser {
         
     }
 
+    private Expression parseBeginExpression(){
+        BeginExpression exp = new BeginExpression();
+        exp.setToken(curToken);
+        nextToken();
+
+        try {
+            exp.setIdent((Identifier)(parseExpression(OperatorType.LOWEST.getPrecedence())));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if(!exp.getIdent().getValue().equals("CODE")){
+
+            return null;
+        }
+
+        try {
+            exp.setBody(parseBlockStatement());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return exp;
+    }
+
+    private BlockStatement parseBlockStatement() throws Exception{
+        BlockStatement bs = new BlockStatement();
+        bs.setToken(curToken);
+
+        nextToken();
+
+        while(!curTokenIs(TokenType.END)){
+            if(curTokenIs(TokenType.EOF)){
+                endCodeError(TokenType.END);
+                return null;
+            }
+            Statement stmt = parseStatement();
+            if(stmt != null){
+                bs.addStatement(stmt);
+            }
+            nextToken();
+        }
+
+        return bs;
+    }
+
     public Expression parseIntegerLiteral(){
         
         IntegerLiteral literal = new IntegerLiteral();
@@ -216,6 +277,7 @@ public class Parser {
         
         return leftExp;
     }
+    
 
     public CharStatement parseCharStatement(){
         CharStatement stmt = new CharStatement();
@@ -224,6 +286,12 @@ public class Parser {
         if (!expectPeek(TokenType.IDENT)){
             return null;
         }
+
+        if(isReservedWord(curToken.getLiteral())){
+            reservedWordsError(curToken.getLiteral());
+            return null;
+        }
+
         stmt.setName(new Identifier(curToken, curToken.getLiteral()));
 
         if(!expectPeek(TokenType.ASSIGN)){
@@ -232,6 +300,11 @@ public class Parser {
 
         nextToken();
 
+        if(!curTokenIs(TokenType.CHARACTER)){
+            typeConversionError(TokenType.CHARACTER);
+            return null;
+        }
+        
         try {
             stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
         } catch (Exception e) {
@@ -251,6 +324,12 @@ public class Parser {
         if (!expectPeek(TokenType.IDENT)){
             return null;
         }
+
+        if(isReservedWord(curToken.getLiteral())){
+            reservedWordsError(curToken.getLiteral());
+            return null;
+        }
+        
         stmt.setName(new Identifier(curToken, curToken.getLiteral()));
 
         if(!expectPeek(TokenType.ASSIGN)){
@@ -258,6 +337,11 @@ public class Parser {
         }
 
         nextToken();
+
+        if(!curTokenIs(TokenType.DIGIT)){
+            typeConversionError(TokenType.DIGIT);
+            return null;
+        }
 
         try {
             stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
@@ -279,6 +363,11 @@ public class Parser {
         if (!expectPeek(TokenType.IDENT)){
             return null;
         }
+
+        if(isReservedWord(curToken.getLiteral())){
+            reservedWordsError(curToken.getLiteral());
+            return null;
+        }
         stmt.setName(new Identifier(curToken, curToken.getLiteral()));
 
         if(!expectPeek(TokenType.ASSIGN)){
@@ -287,6 +376,10 @@ public class Parser {
 
         nextToken();
 
+        if(!curTokenIs(TokenType.TRUE) && !curTokenIs(TokenType.FALSE)){
+            typeConversionError("BOOLEAN");
+            return null;
+        }
         try {
             stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
         } catch (Exception e) {
@@ -391,6 +484,10 @@ public class Parser {
 
     }
 
+    private boolean isReservedWord(String ident){
+        return reservedWords.contains(ident);
+    }
+
     public void noPrefixParseFNError(TokenType t){
         String msg = String.format("no prefix parse function for %s found", t.getLiteral());
         errors.add(msg);
@@ -398,6 +495,26 @@ public class Parser {
 
     private void peekError(TokenType t){
         String msg = String.format("expected next token to be %s, got %s instead", t, peekToken.getTokenType());
+        errors.add(msg);
+    }
+
+    private void reservedWordsError(String ident){
+        String msg = String.format("can't use reserved words as identifier, %s", ident);
+        errors.add(msg);
+    }
+
+    private void endCodeError(TokenType t){
+        String msg = String.format("expected token %s, got %s", t, curToken.getTokenType());
+        errors.add(msg);
+    }
+
+    private void typeConversionError(TokenType t){
+        String msg = String.format("Type conversion error, expected %s, got %s", t, curToken.getTokenType() );
+        errors.add(msg);
+    }
+
+    private void typeConversionError(String t){
+        String msg = String.format("Type conversion error, expected %s, got% s", t, curToken.getTokenType() );
         errors.add(msg);
     }
 

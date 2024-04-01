@@ -32,7 +32,7 @@ public enum TokenType {
 
 
     //KEYWORD
-    START("BEGIN CODE"),
+    START("BEGIN"),
     END("END CODE"),
     INT("INT"),
     CHAR("CHAR"),

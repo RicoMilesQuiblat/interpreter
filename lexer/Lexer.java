@@ -175,8 +175,7 @@ public class Lexer {
             readChar();
         }
         if(ch == ' ' ){
-            if(input.substring(tempPosition, position).equals("BEGIN") || input.substring(tempPosition, position).equals("END")){
-                
+            if(input.substring(tempPosition, position).equals("END")){
                 readChar();
                 while(isLetter(ch)){
                     readChar();
@@ -188,7 +187,7 @@ public class Lexer {
 
     private String readComment(){
         int tempPosition = position;
-        while(ch != '\n'){
+        while(peekChar() != '\n' || peekChar() != 0){
             readChar();
         }
         

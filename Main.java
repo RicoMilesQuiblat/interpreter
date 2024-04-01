@@ -14,7 +14,7 @@ public class Main {
         // ParserTest.testParsingInfixExpressions();
         // ParserTest.testPrecedenceParsing();
         // EvaluatorTest.TestEvalIntegerExpression();
-        
+        // EvaluatorTest.TestEvalIntegerExpression();
         
     }
 }

@@ -23,7 +23,7 @@ public class Token {
         keywords.put("CHAR", TokenType.CHAR);
         keywords.put("INT", TokenType.INT);
         keywords.put("BOOL", TokenType.BOOL);
-        keywords.put("BEGIN CODE", TokenType.START);
+        keywords.put("BEGIN", TokenType.START);
         keywords.put("END CODE", TokenType.END);
         keywords.put("DISPLAY:", TokenType.DISPLAY);
         keywords.put("SCAN:", TokenType.SCAN);
