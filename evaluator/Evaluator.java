@@ -1,8 +1,9 @@
 package evaluator;
 
-import java.beans.Expression;
 import java.util.List;
 
+import ast.BeginExpression;
+import ast.BlockStatement;
 import ast.BoolStatement;
 import ast.BooleanExpression;
 import ast.CharStatement;
@@ -25,17 +26,26 @@ import object.IntegerObject;
 import object.NullObject;
 import object.Object;
 import object.ObjectType;
+import object.Structure;
 
 public class Evaluator {
     private static final BooleanObject TRUE = new BooleanObject(true);
     private static final BooleanObject FALSE = new BooleanObject(false);
     private static final NullObject NULL = new NullObject();
+    private static boolean hasStarted = false;
     
 
     public static Object eval(Node node, Environment env){
+
         if(node instanceof Program){
             Program program = (Program)node;
             return evalStatements(program.getStatements(), env);
+
+        }else if(node instanceof BeginExpression){
+            BeginExpression exp = (BeginExpression)node;
+            BlockStatement body = exp.getBody();
+            return eval(body,env);
+            
 
         }else if(node instanceof ExpressionStatement){
             ExpressionStatement exp = (ExpressionStatement)node;
@@ -102,6 +112,9 @@ public class Evaluator {
         }else if(node instanceof Identifier){
             Identifier id = (Identifier) node;
             return evalIdentifier(id, env);
+        }else if(node instanceof BlockStatement){
+            BlockStatement bs = (BlockStatement) node;
+            return evalStatements(bs.getStatements(), env);
         }
         return NULL;
     }

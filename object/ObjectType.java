@@ -7,7 +7,8 @@ public enum ObjectType {
     CHARACTER_OBJ("CHARACTER"),
     NULL_OBJ("NULL"),
     ERROR_OBJ("ERROR"),
-    BEGIN_OBJ("BEGIN");
+    BEGIN_OBJ("BEGIN"),
+    STRUCTURE_OBJ("STRUCTURE");
 
     private String name;
 

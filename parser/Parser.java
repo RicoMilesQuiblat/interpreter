@@ -175,7 +175,7 @@ public class Parser {
         
     }
 
-    private Expression parseBeginExpression(){
+    private BeginExpression parseBeginExpression(){
         BeginExpression exp = new BeginExpression();
         exp.setToken(curToken);
         nextToken();
@@ -195,6 +195,8 @@ public class Parser {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        
 
         return exp;
     }
@@ -324,7 +326,7 @@ public class Parser {
         if (!expectPeek(TokenType.IDENT)){
             return null;
         }
-
+            
         if(isReservedWord(curToken.getLiteral())){
             reservedWordsError(curToken.getLiteral());
             return null;
@@ -335,9 +337,9 @@ public class Parser {
         if(!expectPeek(TokenType.ASSIGN)){
             return null;
         }
-
+        
         nextToken();
-
+       
         if(!curTokenIs(TokenType.DIGIT)){
             typeConversionError(TokenType.DIGIT);
             return null;
