@@ -5,6 +5,8 @@ import token.TokenType;
 import java.util.Arrays;
 import java.util.List;
 
+import org.hamcrest.core.StringContains;
+
 import token.Token;
 
 public class Lexer {
@@ -19,6 +21,12 @@ public class Lexer {
         this.readPosition = 0;
         this.ch = '\0';
         readChar();
+    }
+
+    public Lexer(){
+        this.position = 0;
+        this.readPosition = 0;
+        this.ch = '\0';
     }
 
     
@@ -37,6 +45,11 @@ public class Lexer {
         Token tok = new Token();
 
         skipWhiteSpace();
+
+        if(ch == '#'){
+            readComment();
+            readChar();
+        }
 
         switch (ch) {
             case '=':
@@ -120,10 +133,6 @@ public class Lexer {
                     tok = newToken(TokenType.ILLEGAL, ch);
                 }
                 break;
-            case '#':
-                tok .setLiteral(readComment());
-                tok.setTokenType(TokenType.COMMENT);
-                break;
             
             case '\"':
                 tok.setLiteral(readBoolean());
@@ -146,8 +155,13 @@ public class Lexer {
                     tok.setTokenType(tok.lookupIdent(tok.getLiteral()));
                     return tok;
                 }else if(isDigit(ch)){
-                    tok.setTokenType(TokenType.DIGIT);
                     tok.setLiteral(readNumber());
+                    if(isFloat(tok)){
+                        tok.setTokenType(TokenType.FLOATINGPOINT);
+
+                    }else{
+                        tok.setTokenType(TokenType.INTEGER);
+                    }
                     return tok;
                 }else {
                     tok = newToken(TokenType.ILLEGAL, ch);
@@ -155,7 +169,7 @@ public class Lexer {
                 }
         }
         readChar();
-
+       
         return tok;
     }
 
@@ -167,6 +181,17 @@ public class Lexer {
         }
     }
 
+    private Boolean isFloat(Token tok){
+        for(int i = 0; i < tok.getLiteral().length(); i++){
+            if(tok.getLiteral().charAt(i) == '.'){
+                return true;
+            }
+        }
+        return false;
+    }
+
+   
+
     private String readIdentifier(){
         int tempPosition = position;
 
@@ -176,6 +201,7 @@ public class Lexer {
         }
         if(ch == ' ' ){
             if(input.substring(tempPosition, position).equals("END")){
+                
                 readChar();
                 while(isLetter(ch)){
                     readChar();
@@ -185,14 +211,11 @@ public class Lexer {
         return input.substring(tempPosition, position);
     }
 
-    private String readComment(){
-        int tempPosition = position;
-        while(peekChar() != '\n' || peekChar() != 0){
+    private void readComment(){
+        while(peekChar() != '\n' && peekChar() != 0){
             readChar();
         }
         
-
-        return input.substring(tempPosition, position);
     }
 
     private String readBoolean(){
@@ -208,7 +231,7 @@ public class Lexer {
 
     private String readNumber(){
         int tempPosition = position;
-        while(isDigit(ch)){
+        while(isDigit(ch) || ch == '.'){
             readChar();
         }
         
@@ -234,6 +257,12 @@ public class Lexer {
         return new Token(tokenType, String.valueOf(ch));
     }
 
+    public String getInput() {
+        return input;
+    }
 
+    public void setInput(String input) {
+        this.input = input;
+    }
 
 }

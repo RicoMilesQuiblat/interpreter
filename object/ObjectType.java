@@ -3,6 +3,7 @@ package object;
 public enum ObjectType {
 
     INTEGER_OBJ("INTEGER"),
+    FLOAT_OBJ("FLOAT"),
     BOOLEAN_OBJ("BOOLEAN"),
     CHARACTER_OBJ("CHARACTER"),
     NULL_OBJ("NULL"),

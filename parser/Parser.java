@@ -17,6 +17,8 @@ import ast.CharStatement;
 import ast.CharacterExpression;
 import ast.Expression;
 import ast.ExpressionStatement;
+import ast.FloatLiteral;
+import ast.FloatStatement;
 import ast.Identifier;
 import ast.InfixExpression;
 import ast.IntStatement;
@@ -103,7 +105,8 @@ public class Parser {
     private void registerExpressions(){
         registerPrefix(TokenType.START, this::parseBeginExpression) ;
         registerPrefix(TokenType.IDENT, this::parseIdentifier);
-        registerPrefix(TokenType.DIGIT, this::parseIntegerLiteral);
+        registerPrefix(TokenType.INTEGER, this::parseIntegerLiteral);
+        registerPrefix(TokenType.FLOATINGPOINT, this::parseFloatLiteral);
         registerPrefix(TokenType.SUBTRACT, this::parsePrefixExpression);
         registerInfix(TokenType.PLUS, this::parseInfixExpression);
         registerInfix(TokenType.SUBTRACT, this::parseInfixExpression);
@@ -168,6 +171,8 @@ public class Parser {
                 return parseIntStatement();
                 case BOOL:
                 return parseBoolStatement();
+                case FLOAT:
+                return parseFloatStatement();
                 default:
                     return parseExpressionStatement();
                 
@@ -185,11 +190,7 @@ public class Parser {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if(!exp.getIdent().getValue().equals("CODE")){
-
-            return null;
-        }
-
+        
         try {
             exp.setBody(parseBlockStatement());
         } catch (Exception e) {
@@ -231,6 +232,25 @@ public class Parser {
             value = Integer.parseInt(curToken.getLiteral(), 10);
         }catch(NumberFormatException e){
             String msg = String.format("Could not parse %s as integer", curToken.getLiteral());
+            System.err.println(msg);
+            errors.add(msg);
+            return null;
+        }
+
+        literal.setValue(value);
+        
+        return literal;
+
+    }
+    public Expression parseFloatLiteral(){
+        
+        FloatLiteral literal = new FloatLiteral();
+        literal.setToken(curToken);
+        float value;
+        try{
+            value = Float.parseFloat(curToken.getLiteral());
+        }catch(NumberFormatException e){
+            String msg = String.format("Could not parse %s as float", curToken.getLiteral());
             System.err.println(msg);
             errors.add(msg);
             return null;
@@ -302,10 +322,6 @@ public class Parser {
 
         nextToken();
 
-        if(!curTokenIs(TokenType.CHARACTER)){
-            typeConversionError(TokenType.CHARACTER);
-            return null;
-        }
         
         try {
             stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
@@ -340,10 +356,6 @@ public class Parser {
         
         nextToken();
        
-        if(!curTokenIs(TokenType.DIGIT)){
-            typeConversionError(TokenType.DIGIT);
-            return null;
-        }
 
         try {
             stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
@@ -351,9 +363,47 @@ public class Parser {
             e.printStackTrace();
         }
 
+
         if (peekTokenIs(TokenType.EOL)){
             nextToken();
         }
+
+
+        return stmt;
+    }
+    public FloatStatement parseFloatStatement(){
+        FloatStatement stmt = new FloatStatement();
+        stmt.setToken(curToken);
+
+        if (!expectPeek(TokenType.IDENT)){
+            return null;
+        }
+            
+        if(isReservedWord(curToken.getLiteral())){
+            reservedWordsError(curToken.getLiteral());
+            return null;
+        }
+        
+        stmt.setName(new Identifier(curToken, curToken.getLiteral()));
+
+        if(!expectPeek(TokenType.ASSIGN)){
+            return null;
+        }
+        
+        nextToken();
+       
+
+        try {
+            stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        if (peekTokenIs(TokenType.EOL)){
+            nextToken();
+        }
+
 
         return stmt;
     }
@@ -378,15 +428,12 @@ public class Parser {
 
         nextToken();
 
-        if(!curTokenIs(TokenType.TRUE) && !curTokenIs(TokenType.FALSE)){
-            typeConversionError("BOOLEAN");
-            return null;
-        }
         try {
             stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
         } catch (Exception e) {
             e.printStackTrace();
         }
+        
 
         if (peekTokenIs(TokenType.EOL)){
             nextToken();

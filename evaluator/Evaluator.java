@@ -9,6 +9,8 @@ import ast.BooleanExpression;
 import ast.CharStatement;
 import ast.CharacterExpression;
 import ast.ExpressionStatement;
+import ast.FloatLiteral;
+import ast.FloatStatement;
 import ast.Identifier;
 import ast.InfixExpression;
 import ast.IntStatement;
@@ -17,11 +19,12 @@ import ast.Node;
 import ast.PrefixExpression;
 import ast.Program;
 import ast.Statement;
-import object.BeginObject;
 import object.BooleanObject;
 import object.CharacterObject;
 import object.Environment;
 import object.Error;
+import object.ExtendedEnvironment;
+import object.FloatObject;
 import object.IntegerObject;
 import object.NullObject;
 import object.Object;
@@ -32,8 +35,7 @@ public class Evaluator {
     private static final BooleanObject TRUE = new BooleanObject(true);
     private static final BooleanObject FALSE = new BooleanObject(false);
     private static final NullObject NULL = new NullObject();
-    private static boolean hasStarted = false;
-    
+
 
     public static Object eval(Node node, Environment env){
 
@@ -44,7 +46,10 @@ public class Evaluator {
         }else if(node instanceof BeginExpression){
             BeginExpression exp = (BeginExpression)node;
             BlockStatement body = exp.getBody();
-            return eval(body,env);
+            Structure struct = new Structure(body, env);
+            Environment extendedEnv = ExtendedEnvironment.newEnclosedEnvironment(struct.getEnv());
+            
+            return eval(struct.getBody(), extendedEnv);
             
 
         }else if(node instanceof ExpressionStatement){
@@ -55,6 +60,10 @@ public class Evaluator {
             
             IntegerLiteral inlit = (IntegerLiteral) node;
             return new IntegerObject(inlit.getValue());
+
+        }else if(node instanceof FloatLiteral){
+            FloatLiteral inlit = (FloatLiteral) node;
+            return new FloatObject(inlit.getValue());
 
         }else if(node instanceof CharacterExpression){
             CharacterExpression ce = (CharacterExpression)node;
@@ -88,6 +97,22 @@ public class Evaluator {
             if(isError(val)){
                 return val;
             }
+            if(!(val instanceof IntegerObject)){
+                return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.INTEGER_OBJ, val.type());
+            }
+            env.set(is.getName().getValue(), val);
+            return val;
+            
+        }else if(node instanceof FloatStatement){
+            FloatStatement is = (FloatStatement)node;
+            Object val = eval(is.getValue(), env);
+            if(isError(val)){
+                return val;
+            }
+            if(!(val instanceof FloatObject) && !(val instanceof IntegerObject)){
+                System.out.print(val);
+                return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.FLOAT_OBJ, val.type());
+            }
             env.set(is.getName().getValue(), val);
             return val;
             
@@ -97,6 +122,9 @@ public class Evaluator {
             if(isError(val)){
                 return val;
             }
+            if(!(val instanceof CharacterObject)){
+                return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.CHARACTER_OBJ, val.type());
+            }
             env.set(cs.getName().getValue(), val);
             return val;
 
@@ -105,6 +133,9 @@ public class Evaluator {
             Object val = eval(bs.getValue(), env);
             if(isError(val)){
                 return val;
+            }
+            if(!(val instanceof BooleanObject)){
+                return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.CHARACTER_OBJ, val.type());
             }
             env.set(bs.getName().getValue(), val);
             return val;
@@ -156,6 +187,10 @@ public class Evaluator {
     private static Object evalInfixExpression(String operator, Object left, Object right){
         if(left.type().equals(ObjectType.INTEGER_OBJ) && right.type().equals(ObjectType.INTEGER_OBJ)){
             return evalIntegerInfixExpression(operator, left, right);
+        }else if(left.type().equals(ObjectType.CHARACTER_OBJ) && right.type().equals(ObjectType.CHARACTER_OBJ)){
+            return evalCharacterInfixExpression(operator, left, right);
+        }else if((left.type().equals(ObjectType.FLOAT_OBJ) && right.type().equals(ObjectType.FLOAT_OBJ)) || (left.type().equals(ObjectType.FLOAT_OBJ) && right.type().equals(ObjectType.INTEGER_OBJ)) || left.type().equals(ObjectType.INTEGER_OBJ) && right.type().equals(ObjectType.FLOAT_OBJ)){
+            return evalFloatInfixExpression(operator, left, right);
         }else if(!(left.type().equals(right.type()))){
             return newError("type mismatch: %s %s %s", left.type(), operator, right.type());
         }
@@ -196,6 +231,71 @@ public class Evaluator {
             return NULL;
         }
     }
+    private static Object evalFloatInfixExpression(String operator, Object left, Object right){
+        float leftVal;
+        float rightVal;
+        if(left instanceof FloatObject && right instanceof FloatObject){
+            FloatObject leftObj = (FloatObject)left;
+            FloatObject rightObj = (FloatObject)right;
+            leftVal = leftObj.getValue();
+            rightVal = rightObj.getValue();
+        }else if(left instanceof FloatObject && right instanceof IntegerObject){
+            FloatObject leftObj = (FloatObject)left;
+            IntegerObject rightObj = (IntegerObject)right;
+            leftVal = leftObj.getValue();
+            rightVal = rightObj.getValue();
+        }else{
+            IntegerObject leftObj = (IntegerObject)left;
+            FloatObject rightObj = (FloatObject)right;
+            leftVal = leftObj.getValue();
+            rightVal = rightObj.getValue();
+        }
+        
+
+        switch (operator){
+            case "+":
+                return new FloatObject(leftVal + rightVal);
+            case "-":
+                return new FloatObject(leftVal - rightVal);
+            case "*":
+                return new FloatObject(leftVal * rightVal);
+            case "/":
+                return new FloatObject(leftVal / rightVal);
+            case "%":
+                return new FloatObject(leftVal % rightVal);
+            case ">":
+                return nativeBoolToBooleanObject(leftVal > rightVal);
+            case "<":
+                return nativeBoolToBooleanObject(leftVal < rightVal);
+            case ">=":
+                return nativeBoolToBooleanObject(leftVal >= rightVal);
+            case "<=":
+                return nativeBoolToBooleanObject(leftVal <= rightVal);
+            case "==":
+                return nativeBoolToBooleanObject(leftVal == rightVal);
+            case "<>":
+                return nativeBoolToBooleanObject(leftVal != rightVal);
+            default:
+            return NULL;
+        }
+    }
+
+    private static Object evalCharacterInfixExpression(String operator, Object left, Object right){
+        CharacterObject leftObj = (CharacterObject)left;
+        CharacterObject rightObj = (CharacterObject)right;
+
+        char leftVal = leftObj.getValue();
+        char rightVal = rightObj.getValue();
+
+        switch (operator){
+            case "==":
+                return nativeBoolToBooleanObject(leftVal == rightVal);
+            case "<>":
+                return nativeBoolToBooleanObject(leftVal != rightVal);
+            default:
+            return NULL;
+        }
+    }
     
     private static Object evalPrefixExpression(String operator, Object right){
         switch (operator){
@@ -208,13 +308,19 @@ public class Evaluator {
     }
 
     private static Object evalMinusPrefixOperatorExpression(Object right){
-        if(!(right.type().equals(ObjectType.INTEGER_OBJ)) ){
+        if(!(right.type().equals(ObjectType.INTEGER_OBJ)) && !(right.type().equals(ObjectType.FLOAT_OBJ))){
             return NULL;
         }
-        
-        IntegerObject obj = (IntegerObject)right;
-        int value = obj.getValue();
-        return new IntegerObject(value * -1);
+        if(right.type().equals(ObjectType.INTEGER_OBJ)){
+
+            IntegerObject obj = (IntegerObject)right;
+            int value = obj.getValue();
+            return new IntegerObject(value * -1);
+        }else{
+            FloatObject obj = (FloatObject)right;
+            float value = obj.getValue();
+            return new FloatObject(value * -1);
+        }
     }
 
     private static Error newError(String format, java.lang.Object... a){

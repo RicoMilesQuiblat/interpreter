@@ -1,0 +1,4 @@
+BEGIN CODE
+    INT x = 5 + 5
+    CHAR y = 'c' 
+END CODE

@@ -5,10 +5,12 @@ import java.util.Map;
 
 public class Environment {
     private Map<String, Object> store;
+    Environment outer;
 
     public Environment() {
         this.store = new HashMap<>();
     }
+
 
     public Object get(String name){
         return store.get(name);
@@ -16,6 +18,12 @@ public class Environment {
 
     public boolean has(String name){
         return store.containsKey(name);
+    }
+    public void setOuter(Environment outer){
+        this.outer = outer;
+    }
+    public Environment getOuter(){
+        return this.outer;
     }
 
     public Object set(String name, Object value){

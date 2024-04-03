@@ -6,7 +6,8 @@ public enum TokenType {
 
     //Identifiers + literals
     IDENT("IDENT"),
-    DIGIT("DIGIT"),
+    INTEGER("INTEGER"),
+    FLOATINGPOINT("FLOATINGPOINT"),
     TRUE("TRUE"),
     FALSE("FALSE"),
     CHARACTER("CHARACTER"),
