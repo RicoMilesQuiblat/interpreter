@@ -120,6 +120,12 @@ public class Lexer {
             case '$':
                 tok = newToken(TokenType.EOL, ch);
                 break;
+            case ',':
+                tok = newToken(TokenType.COMMA, ch);
+                break;
+            case ':':
+                tok = newToken(TokenType.COLON, ch);
+                break;
                 
             case '\'':
                 readChar();
@@ -168,7 +174,6 @@ public class Lexer {
                 }
         }
         readChar();
-        
         return tok;
     }
 

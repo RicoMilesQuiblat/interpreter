@@ -16,7 +16,7 @@ import parser.Parser;
 public class Reader {
     
     public static void Start() throws IOException{
-        FileReader fileReader = new FileReader("/home/freezing/schoolProjects/interpreter2/Main.CODE");
+        FileReader fileReader = new FileReader("/home/freezing/schoolProjects/interpreter2/Main.code");
         BufferedReader in = new BufferedReader(fileReader);
         PrintWriter out = new PrintWriter(System.out);
         Environment env = new Environment();

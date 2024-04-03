@@ -1,8 +1,5 @@
 package parser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +16,7 @@ import ast.Expression;
 import ast.ExpressionStatement;
 import ast.FloatLiteral;
 import ast.FloatStatement;
+import ast.FunctionLiteral;
 import ast.Identifier;
 import ast.InfixExpression;
 import ast.IntStatement;
@@ -39,8 +37,10 @@ public class Parser {
     private List<String> errors;
     private Map<TokenType, PrefixParseFn> prefixParseFns;
     private Map<TokenType, InfixParseFn> infixParseFns;
-    private Map<TokenType, Integer> infixPrecedences;
+    private Map<TokenType, Integer> infixPrecedences; 
+    private Map<String, Statement> statementsList; 
     private Boolean hasStarted;
+    private Boolean functionStarted;
 
 
     public enum OperatorType{
@@ -69,7 +69,9 @@ public class Parser {
         infixParseFns = new HashMap<>();
         infixPrecedences = new HashMap<>();
         reservedWords = new ArrayList<>();
+        statementsList = new HashMap<>();
         hasStarted = false;
+        functionStarted = false;
         initPrecedences();
         initReservedWords();
         errors = new ArrayList<>();
@@ -127,6 +129,7 @@ public class Parser {
         registerPrefix(TokenType.TRUE, this::parseBoolean);
         registerPrefix(TokenType.FALSE, this::parseBoolean);
         registerPrefix(TokenType.CHARACTER, this::parseCharacter);
+        registerPrefix(TokenType.FUNCTION, this::parseFunctionLiteral);
     }
 
 
@@ -156,7 +159,23 @@ public class Parser {
     }
 
     public Expression parseIdentifier(){
-        return new Identifier(curToken, curToken.getLiteral());
+        String ident = curToken.getLiteral();
+        if(peekTokenIs(TokenType.ASSIGN)){
+            nextToken();
+            nextToken();
+            if(statementsList.containsKey(ident)){
+                if(statementsList.get(ident) instanceof IntStatement){
+                    parseIntReAssignment(ident);
+                }else if(statementsList.get(ident) instanceof FloatStatement){
+                    parseFloatReAssignment(ident);
+                }else if(statementsList.get(ident) instanceof BoolStatement){
+                    parseBoolReAssignment(ident);
+                }else if(statementsList.get(ident) instanceof CharStatement){
+                    parseCharReAssignment(ident);
+                }
+            }
+        }
+        return new Identifier(curToken, ident);
     }
 
     public Expression parseBoolean(){
@@ -193,13 +212,19 @@ public class Parser {
 
         try {
             Identifier ident = (Identifier)parseExpression(OperatorType.LOWEST.getPrecedence());
-            if(!ident.getValue().equals("CODE")){
-                identifierMismatchError("CODE", ident.getValue());
+            if(!ident.getValue().equals("CODE") && !ident.getValue().equals("FUNCTION")){
+                errors.add("Invalid Begin Statement");
                 return null;
             }
-            hasStarted = true;
-            exp.setIdent(ident);
-            exp.setBody(parseBlockStatement(ident.getValue()));
+            if(ident.getValue().equals("CODE")){
+
+                hasStarted = true;
+                exp.setBody(parseBlockStatement(ident.getValue()));
+            }else if(ident.getValue().equals("FUNCTION")){
+                functionStarted = true;
+            }
+            exp.setIdent(ident); 
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -208,6 +233,59 @@ public class Parser {
         
 
         return exp;
+    }
+
+    
+    private Expression parseFunctionLiteral(){
+        FunctionLiteral lit = new FunctionLiteral();
+        lit.setToken(curToken);
+
+        if(!expectPeek(TokenType.LPARA)){
+            return null;
+        }
+
+        lit.setParameters(parseFunctionParameters());
+
+        if(!expectPeek(TokenType.START)){
+            return null;
+        }
+        try {
+            lit.setBody(parseBlockStatement("FUNCTION"));
+        } catch (Exception e) {
+            
+        }
+
+    
+        return lit;
+
+    }
+
+    private List<Identifier> parseFunctionParameters(){
+        List<Identifier> identifiers = new ArrayList<>();
+
+        if(peekTokenIs(TokenType.RPARA)){
+            nextToken();
+            return identifiers;
+        }
+
+        nextToken();
+
+        Identifier ident = new Identifier(curToken, curToken.getLiteral());
+        
+        identifiers.add(ident);
+
+        while(peekTokenIs(TokenType.COMMA)){
+            nextToken();
+            nextToken();
+            ident = new Identifier(curToken, curToken.getLiteral());
+            identifiers.add(ident);
+        }
+        if(!expectPeek(TokenType.RPARA)){
+            return null;
+        }
+
+        return identifiers;
+
     }
 
     private BlockStatement parseBlockStatement(String type) throws Exception{
@@ -229,12 +307,18 @@ public class Parser {
         }
         nextToken();
         Identifier ident = (Identifier)parseExpression(OperatorType.LOWEST.getPrecedence());
-        if(type.equals("CODE")){
+        if(type.equals("CODE") && !functionStarted){
             if(!ident.getValue().equals("CODE")){
                 identifierMismatchError("CODE", ident.getValue());
                 return null;
             }
             hasStarted = false;
+        }else if(type.equals("FUNCTION")){
+            if(!ident.getValue().equals("FUNCTION")){
+                identifierMismatchError("FUNCTION", ident.getValue());
+                return null;
+            }
+            functionStarted = false;
         }
 
         return bs;
@@ -354,26 +438,42 @@ public class Parser {
             reservedWordsError(curToken.getLiteral());
             return null;
         }
-
-        stmt.setName(new Identifier(curToken, curToken.getLiteral()));
-
-        if(!expectPeek(TokenType.ASSIGN)){
+        Identifier ident = new Identifier(curToken, curToken.getLiteral());
+        if(statementsList.containsKey(ident.getValue())){
+            errors.add(String.format("Identifier %s is already in use", ident.getValue()));
             return null;
         }
+        stmt.setName(ident);
 
-        nextToken();
+        if(peekTokenIs(TokenType.ASSIGN)){
+            nextToken();
+            nextToken();
+            try {
+                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
 
         
-        try {
-            stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         if (peekTokenIs(TokenType.EOL)){
             nextToken();
         }
+        statementsList.put(ident.getValue(), stmt);
         return stmt;
+    }
+
+    
+    public void parseCharReAssignment(String ident){
+        CharStatement newStmt = (CharStatement)statementsList.get(ident);
+
+        try {
+            newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public IntStatement parseIntStatement(){
@@ -393,28 +493,47 @@ public class Parser {
             return null;
         }
         
-        stmt.setName(new Identifier(curToken, curToken.getLiteral()));
-
-        if(!expectPeek(TokenType.ASSIGN)){
+        Identifier ident = new Identifier(curToken, curToken.getLiteral());
+        if(statementsList.containsKey(ident.getValue())){
+            errors.add(String.format("Identifier %s is already in use", ident.getValue()));
             return null;
         }
-        
-        nextToken();
+
+        stmt.setName(ident);
+
+        if(peekTokenIs(TokenType.ASSIGN)){
+            nextToken();
+            nextToken();
+            
+            try {
+                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+           
+        }
        
 
-        try {
-            stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
 
         if (peekTokenIs(TokenType.EOL)){
             nextToken();
         }
 
+        statementsList.put(ident.getValue(), stmt);
 
         return stmt;
+    }
+
+    public void parseIntReAssignment(String ident){
+        IntStatement newStmt = (IntStatement)statementsList.get(ident);
+
+        try {
+            newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
     public FloatStatement parseFloatStatement(){
         if(!hasStarted){
@@ -433,28 +552,44 @@ public class Parser {
             return null;
         }
         
-        stmt.setName(new Identifier(curToken, curToken.getLiteral()));
-
-        if(!expectPeek(TokenType.ASSIGN)){
+        Identifier ident = new Identifier(curToken, curToken.getLiteral());
+        if(statementsList.containsKey(ident.getValue())){
+            errors.add(String.format("Identifier %s is already in use", ident.getValue()));
             return null;
         }
+        stmt.setName(ident);
+
+        if(peekTokenIs(TokenType.ASSIGN)){
+            nextToken();
+            nextToken();
+            
+            try {
+                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         
-        nextToken();
        
 
-        try {
-            stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
 
         if (peekTokenIs(TokenType.EOL)){
             nextToken();
         }
 
-
+        statementsList.put(ident.getValue(), stmt);
         return stmt;
+    }
+    public void parseFloatReAssignment(String ident){
+        FloatStatement newStmt = (FloatStatement)statementsList.get(ident);
+
+        try {
+            newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
     
     public BoolStatement parseBoolStatement(){
@@ -473,25 +608,40 @@ public class Parser {
             reservedWordsError(curToken.getLiteral());
             return null;
         }
-        stmt.setName(new Identifier(curToken, curToken.getLiteral()));
-
-        if(!expectPeek(TokenType.ASSIGN)){
+        Identifier ident = new Identifier(curToken, curToken.getLiteral());
+        if(statementsList.containsKey(ident.getValue())){
+            errors.add(String.format("Identifier %s is already in use", ident.getValue()));
             return null;
         }
+        stmt.setName(ident);
 
-        nextToken();
-
-        try {
-            stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
-        } catch (Exception e) {
-            e.printStackTrace();
+        if(peekTokenIs(TokenType.ASSIGN)){
+            nextToken();
+            nextToken();
+            
+            try {
+                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+            } catch (Exception e) {
+                e.printStackTrace();
+                }
         }
+
         
 
         if (peekTokenIs(TokenType.EOL)){
             nextToken();
         }
+        statementsList.put(ident.getValue(), stmt);
         return stmt;
+    }
+    public void parseBoolReAssignment(String ident){
+        BoolStatement newStmt = (BoolStatement)statementsList.get(ident);
+
+        try {
+            newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     public Expression parsePrefixExpression(){
        

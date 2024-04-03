@@ -94,6 +94,9 @@ public class Evaluator {
             return evalInfixExpression(ie.getOperator(), left, right);
         }else if(node instanceof IntStatement){
             IntStatement is = (IntStatement)node;
+            if(is.getValue() == null){
+                return NULL;
+            }
             Object val = eval(is.getValue(), env);
             if(isError(val)){
                 return val;
@@ -106,6 +109,9 @@ public class Evaluator {
             
         }else if(node instanceof FloatStatement){
             FloatStatement is = (FloatStatement)node;
+            if(is.getValue() == null){
+                return NULL;
+            }
             Object val = eval(is.getValue(), env);
             if(isError(val)){
                 return val;
@@ -119,6 +125,9 @@ public class Evaluator {
             
         }else if(node instanceof CharStatement){
             CharStatement cs = (CharStatement)node;
+            if(cs.getValue() == null){
+                return NULL;
+            }
             Object val = eval(cs.getValue(), env);
             if(isError(val)){
                 return val;
@@ -131,6 +140,9 @@ public class Evaluator {
 
         }else if(node instanceof BoolStatement){
             BoolStatement bs = (BoolStatement)node;
+            if(bs.getValue() == null){
+                return NULL;
+            }
             Object val = eval(bs.getValue(), env);
             if(isError(val)){
                 return val;
@@ -169,6 +181,7 @@ public class Evaluator {
 
     private static Object evalIdentifier(Identifier node, Environment env){
         Object value;
+        
         if(env.has(node.getValue())){
             value = env.get(node.getValue());
         }else{

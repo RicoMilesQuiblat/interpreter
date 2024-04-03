@@ -41,10 +41,12 @@ public enum TokenType {
     FLOAT("FLOAT"),
     DISPLAY("DISPLAY"),
     SCAN("SCAN"),
+    FUNCTION("FUNCTION"),
     
     //SPECIAL
     COMMENT("#"),
     COLON(":"),
+    COMMA(","),
     EOL("$");
 
 
