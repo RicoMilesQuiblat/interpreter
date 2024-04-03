@@ -39,17 +39,15 @@ public class Lexer {
         }
         position = readPosition;
         readPosition++;
+
     }
 
     public Token nextToken(){
         Token tok = new Token();
 
+        
         skipWhiteSpace();
-
-        if(ch == '#'){
-            readComment();
-            readChar();
-        }
+        
 
         switch (ch) {
             case '=':
@@ -122,6 +120,7 @@ public class Lexer {
             case '$':
                 tok = newToken(TokenType.EOL, ch);
                 break;
+                
             case '\'':
                 readChar();
                 char tempCh = ch;
@@ -169,7 +168,7 @@ public class Lexer {
                 }
         }
         readChar();
-       
+        
         return tok;
     }
 
@@ -199,24 +198,9 @@ public class Lexer {
         while(isLetter(ch)){
             readChar();
         }
-        if(ch == ' ' ){
-            if(input.substring(tempPosition, position).equals("END")){
-                
-                readChar();
-                while(isLetter(ch)){
-                    readChar();
-                }
-            }
-        }
         return input.substring(tempPosition, position);
     }
 
-    private void readComment(){
-        while(peekChar() != '\n' && peekChar() != 0){
-            readChar();
-        }
-        
-    }
 
     private String readBoolean(){
         readChar();
@@ -248,6 +232,15 @@ public class Lexer {
     }
 
     private void skipWhiteSpace(){
+        
+        while(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'){
+            readChar();
+        }
+        if(ch == '#'){
+            while(ch != '\n' && ch != 0){
+                readChar();
+            }
+        }
         while(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'){
             readChar();
         }

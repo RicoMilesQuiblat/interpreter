@@ -23,11 +23,12 @@ public class Reader {
         StringBuilder lines = new StringBuilder();
         String line;
         while((line = in.readLine()) != null){
-            lines.append(line);
+            lines.append(line + "\n");
+    
         }
+    
         
         Lexer lexer = new Lexer(lines.toString());
-        System.out.println(lexer.getInput());
         Parser p = new Parser(lexer);
         Program program = new Program();
         try{

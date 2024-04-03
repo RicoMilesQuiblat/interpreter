@@ -6,8 +6,8 @@ import repl.Repl;
 public class Main {
 
     public static void main(String[] args) throws Exception{
-        Repl.Start();
-        // Reader.Start();
+        // Repl.Start();
+        Reader.Start();
 
         // ParserTest.testCharStatements();
         // ParserTest.testIdentifierExpression();

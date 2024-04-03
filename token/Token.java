@@ -25,9 +25,9 @@ public class Token {
         keywords.put("BOOL", TokenType.BOOL);
         keywords.put("FLOAT", TokenType.FLOAT);
         keywords.put("BEGIN", TokenType.START);
-        keywords.put("END CODE", TokenType.END);
-        keywords.put("DISPLAY:", TokenType.DISPLAY);
-        keywords.put("SCAN:", TokenType.SCAN);
+        keywords.put("END", TokenType.END);
+        keywords.put("DISPLAY", TokenType.DISPLAY);
+        keywords.put("SCAN", TokenType.SCAN);
     }
 
     public TokenType lookupIdent(String ident){

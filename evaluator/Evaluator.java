@@ -36,6 +36,7 @@ public class Evaluator {
     private static final BooleanObject FALSE = new BooleanObject(false);
     private static final NullObject NULL = new NullObject();
 
+    
 
     public static Object eval(Node node, Environment env){
 
@@ -155,10 +156,11 @@ public class Evaluator {
 
     private static Object evalStatements(List<Statement> stmts, Environment env){
         Object result = null;
+
         for(Statement stmt: stmts){
             result = eval(stmt, env);
 
-            if(result.type().equals(ObjectType.ERROR_OBJ)){
+            if(result !=  null &&result.type().equals(ObjectType.ERROR_OBJ)){
                 return result;
             }
         }

@@ -34,16 +34,17 @@ public enum TokenType {
 
     //KEYWORD
     START("BEGIN"),
-    END("END CODE"),
+    END("END"),
     INT("INT"),
     CHAR("CHAR"),
     BOOL("BOOL"),
     FLOAT("FLOAT"),
-    DISPLAY("DISPLAY:"),
-    SCAN("SCAN:"),
+    DISPLAY("DISPLAY"),
+    SCAN("SCAN"),
     
     //SPECIAL
     COMMENT("#"),
+    COLON(":"),
     EOL("$");
 
 

@@ -40,6 +40,7 @@ public class Parser {
     private Map<TokenType, PrefixParseFn> prefixParseFns;
     private Map<TokenType, InfixParseFn> infixParseFns;
     private Map<TokenType, Integer> infixPrecedences;
+    private Boolean hasStarted;
 
 
     public enum OperatorType{
@@ -68,12 +69,15 @@ public class Parser {
         infixParseFns = new HashMap<>();
         infixPrecedences = new HashMap<>();
         reservedWords = new ArrayList<>();
+        hasStarted = false;
         initPrecedences();
         initReservedWords();
         errors = new ArrayList<>();
         registerExpressions();
         nextToken();
         nextToken();
+
+        
 
     }
 
@@ -105,6 +109,7 @@ public class Parser {
     private void registerExpressions(){
         registerPrefix(TokenType.START, this::parseBeginExpression) ;
         registerPrefix(TokenType.IDENT, this::parseIdentifier);
+        registerPrefix(TokenType.LPARA, this::parseGroupedExpression);
         registerPrefix(TokenType.INTEGER, this::parseIntegerLiteral);
         registerPrefix(TokenType.FLOATINGPOINT, this::parseFloatLiteral);
         registerPrefix(TokenType.SUBTRACT, this::parsePrefixExpression);
@@ -130,6 +135,7 @@ public class Parser {
         peekToken = lexer.nextToken();
     }
 
+    
 
 
     public Program ParseProgram() throws Exception{
@@ -186,28 +192,30 @@ public class Parser {
         nextToken();
 
         try {
-            exp.setIdent((Identifier)(parseExpression(OperatorType.LOWEST.getPrecedence())));
+            Identifier ident = (Identifier)parseExpression(OperatorType.LOWEST.getPrecedence());
+            if(!ident.getValue().equals("CODE")){
+                identifierMismatchError("CODE", ident.getValue());
+                return null;
+            }
+            hasStarted = true;
+            exp.setIdent(ident);
+            exp.setBody(parseBlockStatement(ident.getValue()));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
-        try {
-            exp.setBody(parseBlockStatement());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    
 
         
 
         return exp;
     }
 
-    private BlockStatement parseBlockStatement() throws Exception{
+    private BlockStatement parseBlockStatement(String type) throws Exception{
         BlockStatement bs = new BlockStatement();
         bs.setToken(curToken);
 
         nextToken();
-
+        
         while(!curTokenIs(TokenType.END)){
             if(curTokenIs(TokenType.EOF)){
                 endCodeError(TokenType.END);
@@ -218,6 +226,15 @@ public class Parser {
                 bs.addStatement(stmt);
             }
             nextToken();
+        }
+        nextToken();
+        Identifier ident = (Identifier)parseExpression(OperatorType.LOWEST.getPrecedence());
+        if(type.equals("CODE")){
+            if(!ident.getValue().equals("CODE")){
+                identifierMismatchError("CODE", ident.getValue());
+                return null;
+            }
+            hasStarted = false;
         }
 
         return bs;
@@ -262,6 +279,26 @@ public class Parser {
 
     }
 
+    public Expression parseGroupedExpression(){
+        nextToken();
+        Expression exp;
+        try {
+            exp = parseExpression(OperatorType.LOWEST.getPrecedence());
+
+            if(!expectPeek(TokenType.RPARA)){
+                return null;
+            }
+    
+            return exp;
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return null;
+        
+    }
+
 
     public ExpressionStatement parseExpressionStatement() throws Exception{
         
@@ -302,6 +339,10 @@ public class Parser {
     
 
     public CharStatement parseCharStatement(){
+        if(!hasStarted){
+            errors.add(String.format("Program should start with %s, got = %s", TokenType.START, curToken.getTokenType()));
+            return null;
+        }
         CharStatement stmt = new CharStatement();
         stmt.setToken(curToken);
 
@@ -336,6 +377,10 @@ public class Parser {
     }
 
     public IntStatement parseIntStatement(){
+        if(!hasStarted){
+            errors.add(String.format("Program should start with %s, got = %s", TokenType.START, curToken.getTokenType()));
+            return null;
+        }
         IntStatement stmt = new IntStatement();
         stmt.setToken(curToken);
 
@@ -372,6 +417,10 @@ public class Parser {
         return stmt;
     }
     public FloatStatement parseFloatStatement(){
+        if(!hasStarted){
+            errors.add(String.format("Program should start with %s, got = %s", TokenType.START, curToken.getTokenType()));
+            return null;
+        }
         FloatStatement stmt = new FloatStatement();
         stmt.setToken(curToken);
 
@@ -409,6 +458,10 @@ public class Parser {
     }
     
     public BoolStatement parseBoolStatement(){
+        if(!hasStarted){
+            errors.add(String.format("Program should start with %s, got = %s", TokenType.START, curToken.getTokenType()));
+            return null;
+        }
         BoolStatement stmt = new BoolStatement();
         stmt.setToken(curToken);
 
@@ -546,6 +599,12 @@ public class Parser {
         String msg = String.format("expected next token to be %s, got %s instead", t, peekToken.getTokenType());
         errors.add(msg);
     }
+
+    private void identifierMismatchError(String expected, String got){
+        String msg = String.format("Identifer mismatch: expected = %s, got = %s",expected,got);
+        errors.add(msg);
+        
+    }   
 
     private void reservedWordsError(String ident){
         String msg = String.format("can't use reserved words as identifier, %s", ident);
