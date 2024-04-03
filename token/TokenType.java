@@ -27,8 +27,7 @@ public enum TokenType {
     LESSEQ("<="),
     EQUAL("=="),
     NOTEQUAL("<>"),
-    RESCAPE("]"),
-    LESCAPE("["),
+    ESCAPE("["),
 
 
 
@@ -47,7 +46,8 @@ public enum TokenType {
     COMMENT("#"),
     COLON(":"),
     COMMA(","),
-    EOL("$");
+    EOL("$"),
+    CONCAT("&");
 
 
 

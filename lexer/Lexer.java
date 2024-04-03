@@ -14,6 +14,7 @@ public class Lexer {
     private int position;
     private int readPosition;
     private char ch;
+    private static int line = 1;
 
     public Lexer(String input){
         this.input = input;
@@ -47,7 +48,6 @@ public class Lexer {
 
         
         skipWhiteSpace();
-        
 
         switch (ch) {
             case '=':
@@ -111,12 +111,6 @@ public class Lexer {
                     tok = newToken(TokenType.LESS, ch);
                 }
                 break;
-            case '[':
-                tok = newToken(TokenType.LESCAPE, ch);
-                break;
-            case ']':
-                tok = newToken(TokenType.RESCAPE, ch);
-                break;
             case '$':
                 tok = newToken(TokenType.EOL, ch);
                 break;
@@ -126,6 +120,18 @@ public class Lexer {
             case ':':
                 tok = newToken(TokenType.COLON, ch);
                 break;
+            case '&':
+                tok = newToken(TokenType.CONCAT, ch);
+                break;
+            case '[':
+                readChar();
+                char lit = ch;
+                readChar();
+                if(ch == ']'){
+                    readChar();
+                    return newToken(TokenType.ESCAPE, lit);
+                }
+                return newToken(TokenType.ILLEGAL, ch);
                 
             case '\'':
                 readChar();
@@ -158,6 +164,7 @@ public class Lexer {
                 if(isLetter(ch)){
                     tok.setLiteral(readIdentifier());
                     tok.setTokenType(tok.lookupIdent(tok.getLiteral()));
+                    // System.out.println(tok);
                     return tok;
                 }else if(isDigit(ch)){
                     tok.setLiteral(readNumber());
@@ -165,8 +172,10 @@ public class Lexer {
                         tok.setTokenType(TokenType.FLOATINGPOINT);
 
                     }else{
+                        
                         tok.setTokenType(TokenType.INTEGER);
                     }
+                    // System.out.println(tok);
                     return tok;
                 }else {
                     tok = newToken(TokenType.ILLEGAL, ch);
@@ -174,6 +183,7 @@ public class Lexer {
                 }
         }
         readChar();
+        // System.out.println(tok);
         return tok;
     }
 
@@ -239,6 +249,9 @@ public class Lexer {
     private void skipWhiteSpace(){
         
         while(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'){
+            if(ch == '\n'){
+                line++;
+            }
             readChar();
         }
         if(ch == '#'){
@@ -247,6 +260,9 @@ public class Lexer {
             }
         }
         while(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'){
+            if(ch == '\n'){
+                line++;
+            }
             readChar();
         }
     }
@@ -263,4 +279,7 @@ public class Lexer {
         this.input = input;
     }
 
+    public static int getLine(){
+        return line;
+    }
 }

@@ -1,4 +1,0 @@
-
-    INT x = 5 + 5
-
-#asdasdasdsad

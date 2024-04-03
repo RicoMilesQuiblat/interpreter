@@ -41,11 +41,12 @@ public class Reader {
             printParserErrors(out, p.getErrors());
 
         }
-        Object evaluated = Evaluator.eval(program, env);
-        if(evaluated != null){
-            out.println(evaluated.inspect());
-        }
 
+        System.out.println("");
+        System.out.println("");
+        Evaluator.eval(program, env);
+        System.out.println("");
+        
         in.close();
         out.close();
     }

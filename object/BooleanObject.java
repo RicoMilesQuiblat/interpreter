@@ -17,7 +17,10 @@ public class BooleanObject implements Object{
 
     @Override
     public String inspect() {
-        return String.format("%b", value);
+        if(value == true){
+            return "TRUE";
+        }
+        return "FALSE";
     }
 
     @Override

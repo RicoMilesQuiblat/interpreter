@@ -12,6 +12,7 @@ import ast.BoolStatement;
 import ast.BooleanExpression;
 import ast.CharStatement;
 import ast.CharacterExpression;
+import ast.DisplayExpression;
 import ast.Expression;
 import ast.ExpressionStatement;
 import ast.FloatLiteral;
@@ -130,6 +131,7 @@ public class Parser {
         registerPrefix(TokenType.FALSE, this::parseBoolean);
         registerPrefix(TokenType.CHARACTER, this::parseCharacter);
         registerPrefix(TokenType.FUNCTION, this::parseFunctionLiteral);
+        registerPrefix(TokenType.DISPLAY, this::parseDisplayExpression);
     }
 
 
@@ -198,6 +200,9 @@ public class Parser {
                 return parseBoolStatement();
                 case FLOAT:
                 return parseFloatStatement();
+                case ILLEGAL:
+                    errors.add(String.format("Illegal token %s", curToken.getLiteral()));
+                    return null;
                 default:
                     return parseExpressionStatement();
                 
@@ -233,6 +238,43 @@ public class Parser {
         
 
         return exp;
+    }
+
+    private DisplayExpression parseDisplayExpression(){
+        DisplayExpression exp = new DisplayExpression();
+        exp.setToken(curToken);
+        if(!expectPeek(TokenType.COLON)){
+            return null;
+        }
+        nextToken();
+        List<Object> all = new ArrayList<>();
+        try {
+            all.add(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        } catch (Exception e) {
+            
+        }
+        while(peekTokenIs(TokenType.CONCAT)){
+            nextToken();
+            all.add(curToken);
+            nextToken();
+            if(curTokenIs(TokenType.ESCAPE) || curTokenIs(TokenType.EOL)){
+                all.add(curToken);
+                continue;
+            }else if(curTokenIs(TokenType.ESCAPE)){
+                errors.add("Invalid Concatenation");
+                return null;
+            }
+
+            try {
+                all.add(parseExpression(OperatorType.LOWEST.getPrecedence()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        exp.setBody(all);
+
+        return exp;
+        
     }
 
     
@@ -408,7 +450,7 @@ public class Parser {
         }
         Expression leftExp = prefix.apply();
 
-        while(!peekTokenIs(TokenType.EOL) && precedence < peekPrecedence()){
+        while(!peekTokenIs(TokenType.EOL) && precedence < peekPrecedence() && !peekTokenIs(TokenType.CONCAT) && !peekTokenIs(TokenType.ESCAPE)){
             InfixParseFn infix = infixParseFns.get(peekToken.getTokenType());
             if(infix == null){
                 
@@ -487,6 +529,7 @@ public class Parser {
         if (!expectPeek(TokenType.IDENT)){
             return null;
         }
+        
             
         if(isReservedWord(curToken.getLiteral())){
             reservedWordsError(curToken.getLiteral());
@@ -513,12 +556,6 @@ public class Parser {
            
         }
        
-
-
-
-        if (peekTokenIs(TokenType.EOL)){
-            nextToken();
-        }
 
         statementsList.put(ident.getValue(), stmt);
 
@@ -574,9 +611,7 @@ public class Parser {
 
 
 
-        if (peekTokenIs(TokenType.EOL)){
-            nextToken();
-        }
+        
 
         statementsList.put(ident.getValue(), stmt);
         return stmt;
@@ -625,12 +660,8 @@ public class Parser {
                 e.printStackTrace();
                 }
         }
-
         
 
-        if (peekTokenIs(TokenType.EOL)){
-            nextToken();
-        }
         statementsList.put(ident.getValue(), stmt);
         return stmt;
     }

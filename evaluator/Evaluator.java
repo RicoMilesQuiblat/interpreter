@@ -1,5 +1,6 @@
 package evaluator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ast.BeginExpression;
@@ -8,6 +9,8 @@ import ast.BoolStatement;
 import ast.BooleanExpression;
 import ast.CharStatement;
 import ast.CharacterExpression;
+import ast.DisplayExpression;
+import ast.Expression;
 import ast.ExpressionStatement;
 import ast.FloatLiteral;
 import ast.FloatStatement;
@@ -30,6 +33,8 @@ import object.NullObject;
 import object.Object;
 import object.ObjectType;
 import object.Structure;
+import token.Token;
+import token.TokenType;
 
 public class Evaluator {
     private static final BooleanObject TRUE = new BooleanObject(true);
@@ -105,7 +110,6 @@ public class Evaluator {
                 return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.INTEGER_OBJ, val.type());
             }
             env.set(is.getName().getValue(), val);
-            return val;
             
         }else if(node instanceof FloatStatement){
             FloatStatement is = (FloatStatement)node;
@@ -117,11 +121,10 @@ public class Evaluator {
                 return val;
             }
             if(!(val instanceof FloatObject) && !(val instanceof IntegerObject)){
-                System.out.print(val);
                 return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.FLOAT_OBJ, val.type());
             }
             env.set(is.getName().getValue(), val);
-            return val;
+            
             
         }else if(node instanceof CharStatement){
             CharStatement cs = (CharStatement)node;
@@ -136,7 +139,7 @@ public class Evaluator {
                 return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.CHARACTER_OBJ, val.type());
             }
             env.set(cs.getName().getValue(), val);
-            return val;
+            
 
         }else if(node instanceof BoolStatement){
             BoolStatement bs = (BoolStatement)node;
@@ -151,7 +154,7 @@ public class Evaluator {
                 return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.CHARACTER_OBJ, val.type());
             }
             env.set(bs.getName().getValue(), val);
-            return val;
+            
 
         }else if(node instanceof Identifier){
             Identifier id = (Identifier) node;
@@ -159,13 +162,32 @@ public class Evaluator {
         }else if(node instanceof BlockStatement){
             BlockStatement bs = (BlockStatement) node;
             return evalStatements(bs.getStatements(), env);
+        }else if(node instanceof DisplayExpression){
+            DisplayExpression de = (DisplayExpression)node;
+            for(java.lang.Object obj: de.getBody()){
+                if(obj instanceof Expression){
+                    Expression exp = (Expression)obj;
+                    Object object = eval(exp, env);
+                    System.out.print(object.inspect());
+                }else{
+                    Token token = (Token)obj;
+                    if(token == null){
+                        return newError("Invalid token", null);
+                    }
+                    if(token.getTokenType() == TokenType.ESCAPE){
+                        System.out.print(token.getLiteral());
+                    }else if(token.getTokenType() == TokenType.EOL){
+                        System.out.print("\n");
+                    }
+                }
+            }
+            
         }
         return NULL;
     }
 
     
-    
-
+   
     private static Object evalStatements(List<Statement> stmts, Environment env){
         Object result = null;
 
