@@ -7,13 +7,12 @@ import token.Token;
 
 public class DisplayExpression implements Expression{
     Token token;
-    Identifier ident;
+    
     List<Object> body;
    
   
-    public DisplayExpression(Token token,Identifier ident) {
+    public DisplayExpression(Token token) {
         this.token = token;
-        this.ident = ident;
         body = new ArrayList<>();
     }
         
@@ -45,12 +44,6 @@ public class DisplayExpression implements Expression{
 
         return out.toString();
 
-    }
-    public Identifier getIdent() {
-        return ident;
-    }
-    public void setIdent(Identifier ident) {
-        this.ident = ident;
     }
 
     public List<Object> getBody() {

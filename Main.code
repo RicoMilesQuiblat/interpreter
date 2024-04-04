@@ -1,3 +1,19 @@
 BEGIN CODE
+    INT x = -104
+    INT y = x / 2 + 2 - 5 /15
+    BOOL shit
+    SCAN: shit
+    DISPLAY: y & shit
+
+    #sigarilyo human kayat 
+
+END CODE
+
+BEGIN CODE 
+    INT x 
+    SCAN: x 
+    DISPLAY: x 
+
+    #sigarilyo human kayat
 
 END CODE

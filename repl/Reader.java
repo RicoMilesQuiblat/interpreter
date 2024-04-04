@@ -10,7 +10,6 @@ import ast.Program;
 import evaluator.Evaluator;
 import lexer.Lexer;
 import object.Environment;
-import object.Object;
 import parser.Parser;
 
 public class Reader {
@@ -21,12 +20,18 @@ public class Reader {
         PrintWriter out = new PrintWriter(System.out);
         Environment env = new Environment();
         StringBuilder lines = new StringBuilder();
-        String line;
+        String line ;
         while((line = in.readLine()) != null){
-            lines.append(line + "\n");
+            if(line.isBlank()){
+                continue;
+            }
+            lines.append(line);
+            if(!line.isBlank()){
+                lines.append("\n");
+            }
     
         }
-    
+
         
         Lexer lexer = new Lexer(lines.toString());
         Parser p = new Parser(lexer);
@@ -42,10 +47,10 @@ public class Reader {
 
         }
 
-        System.out.println("");
+       
         System.out.println("");
         Evaluator.eval(program, env);
-        System.out.println("");
+        
         
         in.close();
         out.close();

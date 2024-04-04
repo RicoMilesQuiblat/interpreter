@@ -12,9 +12,6 @@ import object.Object;
 import evaluator.Evaluator;
 import lexer.Lexer;
 import parser.Parser;
-import token.Token;
-import token.TokenType;
-
 public class Repl {
 
     private static final String PROMPT = ">> ";
@@ -45,7 +42,6 @@ public class Repl {
 
             if(p.getErrors().size() != 0){
                 printParserErrors(out, p.getErrors());
-                continue;
             }
 
             Object evaluated = Evaluator.eval(program, env);

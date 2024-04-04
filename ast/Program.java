@@ -4,7 +4,7 @@ import java.util.List;
 
 
 public class Program implements Node{
-    private static List<Statement> statements;
+    private List<Statement> statements;
 
     public Program(List<Statement> statements){
         this.statements = statements;
@@ -27,8 +27,8 @@ public class Program implements Node{
         this.statements = statements;
     }
 
-    public static void addStatement(Statement statement){
-        statements.add(statement);
+    public void addStatement(Statement statement){
+        this.statements.add(statement);
     }
 
     @Override

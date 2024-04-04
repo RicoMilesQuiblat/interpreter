@@ -5,7 +5,6 @@ import token.TokenType;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hamcrest.core.StringContains;
 
 import token.Token;
 
@@ -209,9 +208,11 @@ public class Lexer {
     private String readIdentifier(){
         int tempPosition = position;
 
-    
-        while(isLetter(ch)){
+        if(isLetter(ch)){
             readChar();
+            while(isLetter(ch) || isDigit(ch)){
+                readChar();
+            }
         }
         return input.substring(tempPosition, position);
     }
@@ -254,16 +255,15 @@ public class Lexer {
             }
             readChar();
         }
-        if(ch == '#'){
+        while(ch == '#'){
             while(ch != '\n' && ch != 0){
                 readChar();
             }
-        }
-        while(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'){
-            if(ch == '\n'){
+            line--;
+            while(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'){
                 line++;
+                readChar();
             }
-            readChar();
         }
     }
 

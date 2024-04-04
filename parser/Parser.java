@@ -1,6 +1,10 @@
 package parser;
 
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +28,7 @@ import ast.IntStatement;
 import ast.IntegerLiteral;
 import ast.PrefixExpression;
 import ast.Program;
+import ast.ScanExpression;
 import lexer.Lexer;
 import token.Token;
 import token.TokenType;
@@ -42,6 +47,9 @@ public class Parser {
     private Map<String, Statement> statementsList; 
     private Boolean hasStarted;
     private Boolean functionStarted;
+    private Boolean variableDeclarationStarted;
+    private Boolean executableStarted;
+    private int statementsCount;
 
 
     public enum OperatorType{
@@ -73,6 +81,9 @@ public class Parser {
         statementsList = new HashMap<>();
         hasStarted = false;
         functionStarted = false;
+        executableStarted = false;
+        variableDeclarationStarted =false;
+        statementsCount = 1;
         initPrecedences();
         initReservedWords();
         errors = new ArrayList<>();
@@ -132,6 +143,7 @@ public class Parser {
         registerPrefix(TokenType.CHARACTER, this::parseCharacter);
         registerPrefix(TokenType.FUNCTION, this::parseFunctionLiteral);
         registerPrefix(TokenType.DISPLAY, this::parseDisplayExpression);
+        registerPrefix(TokenType.SCAN, this::parseScanExpression);
     }
 
 
@@ -193,12 +205,32 @@ public class Parser {
 
             switch (curToken.getTokenType()){
                 case CHAR:
-                return parseCharStatement();
+                    if(executableStarted){
+                        errors.add("Cannot Declare Variable after Executable code");
+                        return null;
+                    }
+                    variableDeclarationStarted = true;
+                    return parseCharStatement();
                 case INT:
+                if(executableStarted){
+                    errors.add("Cannot Declare Variable after Executable code");
+                    return null;
+                }
+                variableDeclarationStarted = true;
                 return parseIntStatement();
                 case BOOL:
+                if(executableStarted){
+                    errors.add("Cannot Declare Variable after Executable code");
+                    return null;
+                }
+                variableDeclarationStarted = true;
                 return parseBoolStatement();
                 case FLOAT:
+                if(executableStarted){
+                    errors.add("Cannot Declare Variable after Executable code");
+                    return null;
+                }
+                variableDeclarationStarted = true;
                 return parseFloatStatement();
                 case ILLEGAL:
                     errors.add(String.format("Illegal token %s", curToken.getLiteral()));
@@ -211,6 +243,9 @@ public class Parser {
     }
 
     private BeginExpression parseBeginExpression(){
+        executableStarted = false;
+        variableDeclarationStarted = false;
+        statementsList = new HashMap<>();
         BeginExpression exp = new BeginExpression();
         exp.setToken(curToken);
         nextToken();
@@ -235,13 +270,19 @@ public class Parser {
         }
     
 
-        
+        statementsCount++;
 
         return exp;
     }
 
     private DisplayExpression parseDisplayExpression(){
+        if(Lexer.getLine() - 1 < statementsCount);
         DisplayExpression exp = new DisplayExpression();
+        if(!variableDeclarationStarted){
+            errors.add("Executable code before variable declaration is invalid");
+            return null;
+        }
+        executableStarted = true;
         exp.setToken(curToken);
         if(!expectPeek(TokenType.COLON)){
             return null;
@@ -261,7 +302,7 @@ public class Parser {
                 all.add(curToken);
                 continue;
             }else if(curTokenIs(TokenType.ESCAPE)){
-                errors.add("Invalid Concatenation");
+                errors.add("Invalid Concatenation ");
                 return null;
             }
 
@@ -272,9 +313,107 @@ public class Parser {
             }
         }
         exp.setBody(all);
-
+        statementsCount++;
         return exp;
         
+    }
+
+    private ScanExpression parseScanExpression(){
+        if(Lexer.getLine() - 1 < statementsCount);
+        if(!variableDeclarationStarted){
+            errors.add("Executable code before variable declaration is invalid");
+            return null;
+        }
+        executableStarted = true;
+        ScanExpression exp = new ScanExpression();
+        List<String> idents = new ArrayList<>();
+        exp.setToken(curToken);
+        if(!expectPeek(TokenType.COLON)){
+            return null;
+        }
+        if(!expectPeek(TokenType.IDENT)){
+            return null;
+        }
+
+        if(statementsList.containsKey(curToken.getLiteral())){
+            idents.add(curToken.getLiteral());
+        }else {
+            errors.add(String.format("Identifier %s does not exist", curToken.getLiteral()));
+            return null;
+        }
+
+        while(peekTokenIs(TokenType.COMMA)){
+            nextToken();
+            if(!expectPeek(TokenType.IDENT)){
+                return null;
+            }
+    
+            if(statementsList.containsKey(curToken.getLiteral())){
+                idents.add(curToken.getLiteral());
+            }else {
+                errors.add(String.format("Identifier %s does not exist", curToken.getLiteral()));
+                return null;
+            }
+        }
+        List<Expression> expressions = startScanning();
+        if(idents.size() != expressions.size()){
+            errors.add("Not enough arguments for scan");
+            return null;
+        }
+        assignScan(idents, expressions);
+        return exp;
+
+    }
+    private void assignScan(List<String> idents, List<Expression> expressions){
+        for(int i = 0; i < idents.size(); i++){
+            if(statementsList.containsKey(idents.get(i))){
+                if(statementsList.get(idents.get(i)) instanceof IntStatement){
+                    IntStatement is = (IntStatement) statementsList.get(idents.get(i));
+                    is.setValue(expressions.get(i));
+                }else if(statementsList.get(idents.get(i)) instanceof CharStatement){
+                    CharStatement is = (CharStatement) statementsList.get(idents.get(i));
+                    is.setValue(expressions.get(i));
+                }else if(statementsList.get(idents.get(i)) instanceof BoolStatement){
+                    BoolStatement is = (BoolStatement) statementsList.get(idents.get(i));
+                    is.setValue(expressions.get(i));
+                }else if(statementsList.get(idents.get(i)) instanceof FloatStatement){
+                    FloatStatement is = (FloatStatement) statementsList.get(idents.get(i));
+                    is.setValue(expressions.get(i));
+                }
+            }
+        }
+    }
+
+    private List<Expression> startScanning(){
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+        List<Expression> expressions = new ArrayList<>();
+        String line = "";
+        
+        System.out.println("Enter Input: ");
+        System.out.print(">> ");
+        try {
+            line = bufferedReader.readLine();
+        } catch (IOException e) {
+            
+            e.printStackTrace();
+        }
+        
+        
+    
+        Lexer l = new Lexer(line);
+        Parser p = new Parser(l);
+
+        try {
+            expressions.add(p.parseExpression(OperatorType.LOWEST.getPrecedence()));
+            while(p.peekTokenIs(TokenType.COMMA)){
+                p.nextToken();
+                p.nextToken();
+                expressions.add(p.parseExpression(OperatorType.LOWEST.getPrecedence()));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return expressions;
     }
 
     
@@ -427,7 +566,6 @@ public class Parser {
 
 
     public ExpressionStatement parseExpressionStatement() throws Exception{
-        
         ExpressionStatement stmt = new ExpressionStatement();
         stmt.setToken(curToken);
 
@@ -450,7 +588,7 @@ public class Parser {
         }
         Expression leftExp = prefix.apply();
 
-        while(!peekTokenIs(TokenType.EOL) && precedence < peekPrecedence() && !peekTokenIs(TokenType.CONCAT) && !peekTokenIs(TokenType.ESCAPE)){
+        while(!peekTokenIs(TokenType.EOL) && precedence < peekPrecedence() && !peekTokenIs(TokenType.CONCAT) && !peekTokenIs(TokenType.ESCAPE) && !peekTokenIs((TokenType.COMMA))){
             InfixParseFn infix = infixParseFns.get(peekToken.getTokenType());
             if(infix == null){
                 
@@ -465,6 +603,10 @@ public class Parser {
     
 
     public CharStatement parseCharStatement(){
+        if(Lexer.getLine() - 1 < statementsCount){
+            errors.add("More than one statement per line is not allowed");
+            return null;
+        }
         if(!hasStarted){
             errors.add(String.format("Program should start with %s, got = %s", TokenType.START, curToken.getTokenType()));
             return null;
@@ -504,6 +646,7 @@ public class Parser {
             nextToken();
         }
         statementsList.put(ident.getValue(), stmt);
+        statementsCount++;
         return stmt;
     }
 
@@ -519,6 +662,10 @@ public class Parser {
     }
 
     public IntStatement parseIntStatement(){
+        if(Lexer.getLine() - 1 < statementsCount){
+            errors.add("More than one statement per line is not allowed");
+            return null;
+        }
         if(!hasStarted){
             errors.add(String.format("Program should start with %s, got = %s", TokenType.START, curToken.getTokenType()));
             return null;
@@ -529,7 +676,6 @@ public class Parser {
         if (!expectPeek(TokenType.IDENT)){
             return null;
         }
-        
             
         if(isReservedWord(curToken.getLiteral())){
             reservedWordsError(curToken.getLiteral());
@@ -557,8 +703,12 @@ public class Parser {
         }
        
 
-        statementsList.put(ident.getValue(), stmt);
 
+
+       
+
+        statementsList.put(ident.getValue(), stmt);
+        statementsCount++;
         return stmt;
     }
 
@@ -573,6 +723,10 @@ public class Parser {
 
     }
     public FloatStatement parseFloatStatement(){
+        if(Lexer.getLine() -1 < statementsCount){
+            errors.add("More than one statement per line is not allowed");
+            return null;
+        }
         if(!hasStarted){
             errors.add(String.format("Program should start with %s, got = %s", TokenType.START, curToken.getTokenType()));
             return null;
@@ -614,6 +768,7 @@ public class Parser {
         
 
         statementsList.put(ident.getValue(), stmt);
+        statementsCount++;
         return stmt;
     }
     public void parseFloatReAssignment(String ident){
@@ -628,6 +783,10 @@ public class Parser {
     }
     
     public BoolStatement parseBoolStatement(){
+        if(Lexer.getLine() - 1 < statementsCount){
+            errors.add("More than one statement per line is not allowed");
+            return null;
+        }
         if(!hasStarted){
             errors.add(String.format("Program should start with %s, got = %s", TokenType.START, curToken.getTokenType()));
             return null;
@@ -663,6 +822,7 @@ public class Parser {
         
 
         statementsList.put(ident.getValue(), stmt);
+        statementsCount++;
         return stmt;
     }
     public void parseBoolReAssignment(String ident){
