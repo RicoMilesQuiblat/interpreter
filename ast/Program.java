@@ -1,10 +1,12 @@
 package ast;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
 public class Program implements Node{
     private List<Statement> statements;
+    
 
     public Program(List<Statement> statements){
         this.statements = statements;
@@ -30,6 +32,7 @@ public class Program implements Node{
     public void addStatement(Statement statement){
         this.statements.add(statement);
     }
+   
 
     @Override
     public String string() {

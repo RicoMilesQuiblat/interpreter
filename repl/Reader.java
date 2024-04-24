@@ -45,11 +45,14 @@ public class Reader {
         if(p.getErrors().size() != 0) {
             printParserErrors(out, p.getErrors());
 
+        }else{
+            System.out.println("No error");
         }
 
        
         System.out.println("");
         Evaluator.eval(program, env);
+        
         
         
         in.close();

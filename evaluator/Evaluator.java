@@ -47,6 +47,7 @@ public class Evaluator {
 
         if(node instanceof Program){
             Program program = (Program)node;
+            
             return evalStatements(program.getStatements(), env);
 
         }else if(node instanceof BeginExpression){
@@ -60,6 +61,7 @@ public class Evaluator {
 
         }else if(node instanceof ExpressionStatement){
             ExpressionStatement exp = (ExpressionStatement)node;
+            
             return eval(exp.getExpression(), env);
 
         }else if(node instanceof IntegerLiteral){
@@ -87,7 +89,9 @@ public class Evaluator {
         }else if(node instanceof InfixExpression){
             InfixExpression ie = (InfixExpression)node;
             Object left = eval(ie.getLeft(), env);
+            
             if(isError(left)){
+               
                 return left;
             }
 
@@ -101,7 +105,9 @@ public class Evaluator {
             IntStatement is = (IntStatement)node;
             if(is.getValue() == null){
                 env.set(is.getName().getValue(), null);
+                return NULL;
             }
+
             Object val = eval(is.getValue(), env);
             if(isError(val)){
                 return val;
@@ -115,6 +121,7 @@ public class Evaluator {
             FloatStatement is = (FloatStatement)node;
             if(is.getValue() == null){
                 env.set(is.getName().getValue(), null);
+                return NULL;
             }
             Object val = eval(is.getValue(), env);
             if(isError(val)){
@@ -130,6 +137,7 @@ public class Evaluator {
             CharStatement cs = (CharStatement)node;
             if(cs.getValue() == null){
                 env.set(cs.getName().getValue(), null);
+                return NULL;
             }
             Object val = eval(cs.getValue(), env);
             if(isError(val)){
@@ -145,6 +153,7 @@ public class Evaluator {
             BoolStatement bs = (BoolStatement)node;
             if(bs.getValue() == null){
                 env.set(bs.getName().getValue(), null);
+                return NULL;
             }
             Object val = eval(bs.getValue(), env);
             if(isError(val)){
@@ -164,13 +173,16 @@ public class Evaluator {
             return evalStatements(bs.getStatements(), env);
         }else if(node instanceof DisplayExpression){
             DisplayExpression de = (DisplayExpression)node;
+            
             for(java.lang.Object obj: de.getBody()){
                 if(obj instanceof Expression){
                     Expression exp = (Expression)obj;
                     Object object = eval(exp, env);
+                    
                     System.out.print(object.inspect());
                 }else{
                     Token token = (Token)obj;
+                    
                     if(token == null){
                         return newError("Invalid token", null);
                     }
@@ -181,6 +193,7 @@ public class Evaluator {
                     }
                 }
             }
+            
             System.out.println("");
             
         }
@@ -205,10 +218,13 @@ public class Evaluator {
     private static Object evalIdentifier(Identifier node, Environment env){
         Object value;
         if(env.has(node.getValue())){
+            
             value = env.get(node.getValue());
+            
         }else{
             return newError("identifier not found: " + node.getValue());
         }
+        
         return value;
 
     }

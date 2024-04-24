@@ -26,6 +26,10 @@ public class Environment {
         return this.outer;
     }
 
+    public Map<String,Object> getStore(){
+        return store;
+    }
+
     public Object set(String name, Object value){
         store.put(name, value);
         return value;
