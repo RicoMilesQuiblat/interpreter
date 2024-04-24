@@ -213,6 +213,12 @@ public class Lexer {
             while(isLetter(ch) || isDigit(ch)){
                 readChar();
             }
+            
+            if(ch == ' ' && input.substring(tempPosition, position).equals("BEGIN")){
+                while(isLetter(ch) || isDigit(ch)){
+                    readChar();
+                }
+            }
         }
         return input.substring(tempPosition, position);
     }

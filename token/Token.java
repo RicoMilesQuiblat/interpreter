@@ -28,6 +28,8 @@ public class Token {
         keywords.put("END", TokenType.END);
         keywords.put("DISPLAY", TokenType.DISPLAY);
         keywords.put("SCAN", TokenType.SCAN);
+        keywords.put("IF", TokenType.IF);
+        keywords.put("ELSE", TokenType.ELSE);
     }
 
     public TokenType lookupIdent(String ident){

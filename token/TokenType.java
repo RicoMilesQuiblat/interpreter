@@ -41,6 +41,8 @@ public enum TokenType {
     DISPLAY("DISPLAY"),
     SCAN("SCAN"),
     FUNCTION("FUNCTION"),
+    IF("IF"),
+    ELSE("ELSE"),
     
     //SPECIAL
     COMMENT("#"),

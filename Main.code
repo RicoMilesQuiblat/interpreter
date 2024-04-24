@@ -1,0 +1,13 @@
+BEGIN CODE 
+	INT x = 5
+	INT y = 10
+	IF(x == y)
+	BEGIN IF 
+		DISPLAY: x + y
+	END IF
+	ELSE 
+	BEGIN IF 
+		DISPLAY: 'n' & 'e' & 'g' & 'r' & 'o'
+	END IF
+	
+END CODE

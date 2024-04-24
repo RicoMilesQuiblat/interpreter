@@ -4,7 +4,6 @@ import token.Token;
 
 public class BeginExpression implements Expression{
     Token token;
-    Identifier ident;
     BlockStatement body;
 
     public BeginExpression(Token token,Identifier ident, BlockStatement body) {
@@ -45,13 +44,7 @@ public class BeginExpression implements Expression{
         return out.toString();
 
     }
-    public Identifier getIdent() {
-        return ident;
-    }
-    public void setIdent(Identifier ident) {
-        this.ident = ident;
-    }
-
+  
     
 
     

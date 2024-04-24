@@ -15,6 +15,7 @@ import ast.ExpressionStatement;
 import ast.FloatLiteral;
 import ast.FloatStatement;
 import ast.Identifier;
+import ast.IfExpression;
 import ast.InfixExpression;
 import ast.IntStatement;
 import ast.IntegerLiteral;
@@ -86,6 +87,9 @@ public class Evaluator {
                 return right;
             }
             return evalPrefixExpression(pe.getOperator(), right);
+        }else if(node instanceof IfExpression){
+            IfExpression exp = (IfExpression)node;
+            return evalIfExpression(exp,env);
         }else if(node instanceof InfixExpression){
             InfixExpression ie = (InfixExpression)node;
             Object left = eval(ie.getLeft(), env);
@@ -212,6 +216,26 @@ public class Evaluator {
             }
         }
         return result;
+    }
+    private static Object evalIfExpression(IfExpression expression, Environment env){
+        Object condition = eval(expression.getCondition(), env);
+        if(isTruthy(condition)){
+            return eval(expression.getConsequence(), env);
+        }else{
+            return eval(expression.getAlternative(), env);
+        }
+
+    }
+
+    private static boolean isTruthy(Object obj){
+        if(obj.equals(NULL)){
+            return false;
+        }else if(obj.equals(TRUE)){
+            return true;
+        }else if(obj.equals(FALSE)){
+            return false;
+        }
+        return true;
     }
 
     private static Object evalIdentifier(Identifier node, Environment env){

@@ -25,6 +25,7 @@ import ast.FloatLiteral;
 import ast.FloatStatement;
 import ast.FunctionLiteral;
 import ast.Identifier;
+import ast.IfExpression;
 import ast.InfixExpression;
 import ast.IntStatement;
 import ast.IntegerLiteral;
@@ -52,6 +53,7 @@ public class Parser {
     private Boolean variableDeclarationStarted;
     private Boolean executableStarted;
     private int statementsCount;
+    private boolean ifStarted;
     private Program program;
     private List<Statement> tempStatementList;
 
@@ -87,6 +89,7 @@ public class Parser {
         statementsList = new HashMap<>();
         hasStarted = false;
         functionStarted = false;
+        ifStarted = false;
         executableStarted = false;
         variableDeclarationStarted =false;
         statementsCount = 1;
@@ -150,6 +153,7 @@ public class Parser {
         registerPrefix(TokenType.FUNCTION, this::parseFunctionLiteral);
         registerPrefix(TokenType.DISPLAY, this::parseDisplayExpression);
         registerPrefix(TokenType.SCAN, this::parseScanExpression);
+        registerPrefix(TokenType.IF, this::parseIfExpression);
     }
 
 
@@ -417,40 +421,99 @@ public class Parser {
             }
         }
         
+    private IfExpression parseIfExpression(){
+        
+        if(ifStarted){
+            return null;
+        }
+        ifStarted = true;
+        IfExpression exp = new IfExpression();
+        exp.setToken(curToken);
+
+
+        if(!expectPeek(TokenType.LPARA)){
+            return null;
+        }
+        nextToken();
+        try {
+            exp.setCondition(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if(!expectPeek(TokenType.RPARA)){
+            return null;
+        }
+
+        if(!expectPeek(TokenType.START)){
+            return null;
+        }
+        nextToken();
+        if(!curTokenIs(TokenType.IF)){
+            errors.add("Invalid IF");
+            return null;
+        }
+        
+
+        try {
+            exp.setConsequence(parseBlockStatement(curToken.getLiteral()));
             
+        } catch (Exception e) {
+           e.printStackTrace();
+        }
+
+        if(peekTokenIs(TokenType.ELSE)){
+            nextToken();
+
+            if(!expectPeek(TokenType.START)){
+                return null;
+            }
+            nextToken();
+            if(!curTokenIs(TokenType.IF)){
+                errors.add("Invalid IF");
+                return null;
+            }
+
+            try {
+                exp.setAlternative(parseBlockStatement(curToken.getLiteral()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+       
+       return exp;
+
+    }    
 
 
     private BeginExpression parseBeginExpression(){
+        if(ifStarted){
+            errors.add("Invalid begin");
+            return null;
+        }
         executableStarted = false;
         variableDeclarationStarted = false;
         statementsList = new HashMap<>();
         BeginExpression exp = new BeginExpression();
         exp.setToken(curToken);
         nextToken();
+        if(!curToken.getLiteral().equals("CODE")){
+            return null;
+        }
+        hasStarted = true;
 
+        Identifier ident = new Identifier(curToken, curToken.getLiteral());
         try {
-            Identifier ident = (Identifier)parseExpression(OperatorType.LOWEST.getPrecedence());
-            if(!ident.getValue().equals("CODE") && !ident.getValue().equals("FUNCTION")){
-                errors.add("Invalid Begin Statement");
-                return null;
-            }
-            if(ident.getValue().equals("CODE")){
-                hasStarted = true;
-                exp.setBody(parseBlockStatement(ident.getValue()));
-            }else if(ident.getValue().equals("FUNCTION")){
-                functionStarted = true;
-            }
-            exp.setIdent(ident); 
-            
+            exp.setBody(parseBlockStatement(ident.getValue()));
         } catch (Exception e) {
             e.printStackTrace();
         }
-    
+
 
         statementsCount++;
 
         return exp;
     }
+    
 
     private DisplayExpression parseDisplayExpression(){
         if(Lexer.getLine() - 1 < statementsCount){
@@ -674,22 +737,24 @@ public class Parser {
                     bs.addStatement(statement);
                 }
             }
+            
             nextToken();
         }
+        
         nextToken();
-        Identifier ident = (Identifier)parseExpression(OperatorType.LOWEST.getPrecedence());
+
         if(type.equals("CODE") && !functionStarted){
-            if(!ident.getValue().equals("CODE")){
-                identifierMismatchError("CODE", ident.getValue());
+            if(!curToken.getLiteral().equals("CODE")){
+                identifierMismatchError("CODE", curToken.getLiteral());
                 return null;
             }
             hasStarted = false;
-        }else if(type.equals("FUNCTION")){
-            if(!ident.getValue().equals("FUNCTION")){
-                identifierMismatchError("FUNCTION", ident.getValue());
+        }else if(type.equals("IF")){
+            if(!curToken.getLiteral().equals("IF")){
+                identifierMismatchError("IF", curToken.getLiteral());
                 return null;
             }
-            functionStarted = false;
+            ifStarted = false;
         }
 
         return bs;
