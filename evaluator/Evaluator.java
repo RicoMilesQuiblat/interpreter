@@ -107,7 +107,6 @@ public class Evaluator {
                 env.set(is.getName().getValue(), null);
                 return NULL;
             }
-
             Object val = eval(is.getValue(), env);
             if(isError(val)){
                 return val;

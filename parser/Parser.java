@@ -249,91 +249,174 @@ public class Parser {
     private void parseReassignment(){
         String ident = curToken.getLiteral();
         if(statementsList.containsKey(curToken.getLiteral())){
+            
             if(statementsList.get(ident) instanceof IntStatement){
+                List<IntStatement> temp = new ArrayList<>();
                 IntStatement newStmt = new IntStatement();
-                newStmt.setToken(new Token(TokenType.INT, "INT"));
-                newStmt.setName(new Identifier(curToken, ident));
-                try {
-                    nextToken();
-                    nextToken();
+                Token token = new Token(TokenType.INT, "INT");
+                newStmt.setToken(token);
+                newStmt.setName(new Identifier(token, ident));
+                nextToken();
+                nextToken();
+                if(peekTokenIs(TokenType.ASSIGN)){
+                    temp.add(newStmt);
+                    while(peekTokenIs(TokenType.ASSIGN)){
+                        IntStatement is = new IntStatement();
+                        is.setName(new Identifier(curToken, curToken.getLiteral()));
+                        is.setToken(curToken);
+                        temp.add(is);
+                        nextToken();
+                        nextToken();
+                    }
+                    try{
+                        
+                        Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                        for(IntStatement x: temp){
+                            x.setValue(value);
+                            tempStatementList.add(x);
+                        }
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                    return;
+                }
                             
+                try {
+                    newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                        
+                }
+                tempStatementList.add(newStmt);
+                
+            }else if(statementsList.get(ident) instanceof FloatStatement){
+                    List<FloatStatement> temp = new ArrayList<>();
+                    FloatStatement newStmt = new FloatStatement();
+                    Token token = new Token(TokenType.FLOAT, "FLOAT");
+                    newStmt.setToken(token);
+                    newStmt.setName(new Identifier(token, ident));
+                   
+                    nextToken();
+                    nextToken();
+                    if(peekTokenIs(TokenType.ASSIGN)){
+                        temp.add(newStmt);
+                        while(peekTokenIs(TokenType.ASSIGN)){
+                            FloatStatement is = new FloatStatement();
+                            is.setName(new Identifier(curToken, curToken.getLiteral()));
+                            is.setToken(curToken);
+                            temp.add(is);
+                            nextToken();
+                            nextToken();
+                        }
+                        try{
+                            
+                            Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                            for(FloatStatement x: temp){
+                                x.setValue(value);
+                                tempStatementList.add(x);
+                            }
+                        }catch(Exception e){
+                            e.printStackTrace();
+                        }
+                        return;
+                    }
+                                
                     try {
                         newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
                     } catch (Exception e) {
                         e.printStackTrace();
-                        
+                            
                     }
                     tempStatementList.add(newStmt);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        
-            }else if(statementsList.get(ident) instanceof FloatStatement){
-                if(statementsList.get(ident) instanceof IntStatement){
-                    FloatStatement newStmt = new FloatStatement();
-                    newStmt.setToken(new Token(TokenType.INT, "INT"));
-                    newStmt.setName(new Identifier(curToken, ident));
-                    try {
-                        nextToken();
-                        nextToken();
-                                
-                        try {
-                            newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            
-                        }
-                        tempStatementList.add(newStmt);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+                   
                 
             }else if(statementsList.get(ident) instanceof BoolStatement){
-                if(statementsList.get(ident) instanceof IntStatement){
+                    List<BoolStatement> temp = new ArrayList<>();
                     BoolStatement newStmt = new BoolStatement();
-                    newStmt.setToken(new Token(TokenType.INT, "INT"));
-                    newStmt.setName(new Identifier(curToken, ident));
-                    try {
-                        nextToken();
-                        nextToken();
-                                
-                        try {
-                            newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            
+                    Token token = new Token(TokenType.BOOL, "BOOL");
+                    newStmt.setToken(token);
+                    newStmt.setName(new Identifier(token, ident));
+                    
+                    nextToken();
+                    nextToken();
+
+                    if(peekTokenIs(TokenType.ASSIGN)){
+                        temp.add(newStmt);
+                        while(peekTokenIs(TokenType.ASSIGN)){
+                            BoolStatement is = new BoolStatement();
+                            is.setName(new Identifier(curToken, curToken.getLiteral()));
+                            is.setToken(curToken);
+                            temp.add(is);
+                            nextToken();
+                            nextToken();
                         }
-                        tempStatementList.add(newStmt);
+                        try{
+                            
+                            Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                            for(BoolStatement x: temp){
+                                x.setValue(value);
+                                tempStatementList.add(x);
+                            }
+                        }catch(Exception e){
+                            e.printStackTrace();
+                        }
+                        return;
+                    }
+                                
+                    try {
+                        newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
                     } catch (Exception e) {
                         e.printStackTrace();
+                            
                     }
-                }
+                    tempStatementList.add(newStmt);
+                    
+                
                 
             }else if(statementsList.get(ident) instanceof CharStatement){
-                if(statementsList.get(ident) instanceof IntStatement){
+                    List<CharStatement> temp = new ArrayList<>();
                     CharStatement newStmt = new CharStatement();
-                    newStmt.setToken(new Token(TokenType.INT, "INT"));
-                    newStmt.setName(new Identifier(curToken, ident));
-                    try {
-                        nextToken();
-                        nextToken();
-                                
-                        try {
-                            newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            
+                    Token token = new Token(TokenType.CHAR, "CHAR");
+                    newStmt.setToken(token);
+                    newStmt.setName(new Identifier(token, ident));
+                    nextToken();
+                    nextToken();
+
+                    if(peekTokenIs(TokenType.ASSIGN)){
+                        temp.add(newStmt);
+                        while(peekTokenIs(TokenType.ASSIGN)){
+                            CharStatement is = new CharStatement();
+                            is.setName(new Identifier(curToken, curToken.getLiteral()));
+                            is.setToken(curToken);
+                            temp.add(is);
+                            nextToken();
+                            nextToken();
                         }
-                        tempStatementList.add(newStmt);
+                        try{
+                            
+                            Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                            for(CharStatement x: temp){
+                                x.setValue(value);
+                                tempStatementList.add(x);
+                            }
+                        }catch(Exception e){
+                            e.printStackTrace();
+                        }
+                        return;
+                    }
+                                
+                    try {
+                        newStmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
                     } catch (Exception e) {
                         e.printStackTrace();
+                            
                     }
+                    tempStatementList.add(newStmt);
+                    
                 }
-            
             }
         }
+        
             
 
 
@@ -352,7 +435,6 @@ public class Parser {
                 return null;
             }
             if(ident.getValue().equals("CODE")){
-
                 hasStarted = true;
                 exp.setBody(parseBlockStatement(ident.getValue()));
             }else if(ident.getValue().equals("FUNCTION")){
@@ -387,10 +469,15 @@ public class Parser {
         }
         nextToken();
         List<Object> all = new ArrayList<>();
-        try {
-            all.add(parseExpression(OperatorType.LOWEST.getPrecedence()));
-        } catch (Exception e) {
-            
+        if(curTokenIs(TokenType.ESCAPE)){
+            all.add(curToken);
+        }else{
+
+            try {
+                all.add(parseExpression(OperatorType.LOWEST.getPrecedence()));
+            } catch (Exception e) {
+                
+            }
         }
         while(peekTokenIs(TokenType.CONCAT)){
             nextToken();
@@ -734,6 +821,34 @@ public class Parser {
         if(peekTokenIs(TokenType.ASSIGN)){
             nextToken();
             nextToken();
+            if(curTokenIs(TokenType.IDENT) && peekTokenIs(TokenType.ASSIGN)){
+                List<CharStatement> temp = new ArrayList<>();
+                temp.add(stmt);
+                while(peekTokenIs(TokenType.ASSIGN)){
+                    CharStatement is = new CharStatement();
+                    is.setToken(curToken);
+                    Identifier tempIdent = new Identifier(curToken, curToken.getLiteral());
+                    if(statementsList.containsKey(ident.getValue())){
+                        errors.add(String.format("Identifier %s is already in use", ident.getValue()));
+                        return null;
+                    }
+                    is.setName(tempIdent);
+                    temp.add(is);
+                    nextToken();
+                    nextToken();
+                }
+                try{
+
+                    Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                    for(CharStatement x: temp){
+                        x.setValue(value);
+                        tempStatementList.add(x);
+                    }
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+                return null;
+            }
             try {
                 stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
             } catch (Exception e) {
@@ -790,6 +905,33 @@ public class Parser {
         if(peekTokenIs(TokenType.ASSIGN)){
             nextToken();
             nextToken();
+            if(curTokenIs(TokenType.IDENT) && peekTokenIs(TokenType.ASSIGN)){
+                List<IntStatement> temp = new ArrayList<>();
+                temp.add(stmt);
+                while(peekTokenIs(TokenType.ASSIGN)){
+                    IntStatement is = new IntStatement();
+                    is.setToken(curToken);
+                    Identifier tempIdent = new Identifier(curToken, curToken.getLiteral());
+                    if(statementsList.containsKey(ident.getValue())){
+                        errors.add(String.format("Identifier %s is already in use", tempIdent.getValue()));
+                        return null;
+                    }
+                    temp.add(is);
+                    nextToken();
+                    nextToken();
+                }
+                try{
+
+                    Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                    for(IntStatement x: temp){
+                        x.setValue(value);
+                        tempStatementList.add(x);
+                    }
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+                return null;
+            }
             
             try {
                 stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
@@ -815,8 +957,7 @@ public class Parser {
         }
         tempStatementList.add(stmt);
         
-       
-        return stmt;
+       return stmt;
     }
 
    
@@ -851,6 +992,33 @@ public class Parser {
         if(peekTokenIs(TokenType.ASSIGN)){
             nextToken();
             nextToken();
+            if(curTokenIs(TokenType.IDENT) && peekTokenIs(TokenType.ASSIGN)){
+                List<FloatStatement> temp = new ArrayList<>();
+                temp.add(stmt);
+                while(peekTokenIs(TokenType.ASSIGN)){
+                    FloatStatement is = new FloatStatement();
+                    is.setToken(curToken);
+                    Identifier tempIdent = new Identifier(curToken, curToken.getLiteral());
+                    if(statementsList.containsKey(ident.getValue())){
+                        errors.add(String.format("Identifier %s is already in use", tempIdent.getValue()));
+                        return null;
+                    }
+                    temp.add(is);
+                    nextToken();
+                    nextToken();
+                }
+                try{
+
+                    Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                    for(FloatStatement x: temp){
+                        x.setValue(value);
+                        tempStatementList.add(x);
+                    }
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+                return null;
+            }
             
             try {
                 stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
@@ -872,7 +1040,9 @@ public class Parser {
             parseFloatStatement();
         }
         tempStatementList.add(stmt);
+
         return stmt;
+
     }
     
     public BoolStatement parseBoolStatement(){
@@ -905,7 +1075,33 @@ public class Parser {
         if(peekTokenIs(TokenType.ASSIGN)){
             nextToken();
             nextToken();
-            
+            if(curTokenIs(TokenType.IDENT) && peekTokenIs(TokenType.ASSIGN)){
+                List<BoolStatement> temp = new ArrayList<>();
+                temp.add(stmt);
+                while(peekTokenIs(TokenType.ASSIGN)){
+                    BoolStatement is = new BoolStatement();
+                    is.setToken(curToken);
+                    Identifier tempIdent = new Identifier(curToken, curToken.getLiteral());
+                    if(statementsList.containsKey(ident.getValue())){
+                        errors.add(String.format("Identifier %s is already in use", tempIdent.getValue()));
+                        return null;
+                    }
+                    temp.add(is);
+                    nextToken();
+                    nextToken();
+                }
+                try{
+
+                    Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                    for(BoolStatement x: temp){
+                        x.setValue(value);
+                        tempStatementList.add(x);
+                    }
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+                return null;
+            }
             try {
                 stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
             } catch (Exception e) {
