@@ -41,6 +41,8 @@ public class Evaluator {
     private static final BooleanObject TRUE = new BooleanObject(true);
     private static final BooleanObject FALSE = new BooleanObject(false);
     private static final NullObject NULL = new NullObject();
+    private static int errorCount = 0;
+    public static int displayCount = 0;
 
     
 
@@ -118,6 +120,7 @@ public class Evaluator {
             if(!(val instanceof IntegerObject)){
                 return newError("Type Conversion Error, expected = %s, got = %s ", ObjectType.INTEGER_OBJ, val.type());
             }
+            // System.out.println(is.getName().getValue());
             env.set(is.getName().getValue(), val);
             
         }else if(node instanceof FloatStatement){
@@ -176,7 +179,7 @@ public class Evaluator {
             return evalStatements(bs.getStatements(), env);
         }else if(node instanceof DisplayExpression){
             DisplayExpression de = (DisplayExpression)node;
-            
+            displayCount++;
             for(java.lang.Object obj: de.getBody()){
                 if(obj instanceof Expression){
                     Expression exp = (Expression)obj;
@@ -219,11 +222,24 @@ public class Evaluator {
     }
     private static Object evalIfExpression(IfExpression expression, Environment env){
         Object condition = eval(expression.getCondition(), env);
+        if(expression.getElseConditions().size() != expression.getElseConsequences().size()){
+            newError("Invalid IF statement", null);
+            return NULL;
+        }
+        
         if(isTruthy(condition)){
             return eval(expression.getConsequence(), env);
-        }else{
-            return eval(expression.getAlternative(), env);
+        }else if(expression.getElseConditions().size() > 0){
+            for(int i =0; i < expression.getElseConditions().size(); i++){
+                Object elseCondition = eval(expression.getElseConditions().get(i), env);
+                if(isTruthy(elseCondition)){
+                    return eval(expression.getElseConsequences().get(i), env);
+                }
+            }
         }
+        
+        return eval(expression.getAlternative(), env);
+        
 
     }
 
@@ -265,6 +281,8 @@ public class Evaluator {
             return evalIntegerInfixExpression(operator, left, right);
         }else if(left.type().equals(ObjectType.CHARACTER_OBJ) && right.type().equals(ObjectType.CHARACTER_OBJ)){
             return evalCharacterInfixExpression(operator, left, right);
+        }else if(left.type().equals(ObjectType.BOOLEAN_OBJ) && right.type().equals(ObjectType.BOOLEAN_OBJ)){
+            return evalBooleanInfixExpression(operator, left, right);
         }else if((left.type().equals(ObjectType.FLOAT_OBJ) && right.type().equals(ObjectType.FLOAT_OBJ)) || (left.type().equals(ObjectType.FLOAT_OBJ) && right.type().equals(ObjectType.INTEGER_OBJ)) || left.type().equals(ObjectType.INTEGER_OBJ) && right.type().equals(ObjectType.FLOAT_OBJ)){
             return evalFloatInfixExpression(operator, left, right);
         }else if(!(left.type().equals(right.type()))){
@@ -372,12 +390,31 @@ public class Evaluator {
             return NULL;
         }
     }
+    private static Object evalBooleanInfixExpression(String operator, Object left, Object right){
+        BooleanObject leftObj = (BooleanObject)left;
+        BooleanObject rightObj = (BooleanObject)right;
+
+        boolean leftVal = leftObj.getValue();
+        boolean rightVal = rightObj.getValue();
+
+        switch (operator){
+            case "AND":
+                return nativeBoolToBooleanObject(leftVal == rightVal);
+            case "OR":
+                return nativeBoolToBooleanObject(leftVal || rightVal);
+            default:
+            return NULL;
+        }
+    }
     
     private static Object evalPrefixExpression(String operator, Object right){
         switch (operator){
             case "-":
                 
                 return evalMinusPrefixOperatorExpression(right);
+
+            case "NOT":
+                return evalNotPrefixOperatorExpression(right);
             default:
                 return newError("unknown operator: %s%s", operator, right.type());
         }
@@ -399,7 +436,20 @@ public class Evaluator {
         }
     }
 
+    private static Object evalNotPrefixOperatorExpression(Object right){
+        if(!(right.type().equals(ObjectType.BOOLEAN_OBJ))){
+            newError("Error: Expected %s, got %s instead", ObjectType.BOOLEAN_OBJ, right.type());
+            return NULL;
+        }
+
+            BooleanObject obj = (BooleanObject)right;
+            boolean value = obj.getValue();
+            return new BooleanObject(!value);
+        
+    }
+
     private static Error newError(String format, java.lang.Object... a){
+        errorCount++;
         return new Error(String.format(format, a));
     }
 

@@ -43,6 +43,9 @@ public enum TokenType {
     FUNCTION("FUNCTION"),
     IF("IF"),
     ELSE("ELSE"),
+    AND("AND"),
+    OR("OR"),
+    NOT("NOT"),
     
     //SPECIAL
     COMMENT("#"),

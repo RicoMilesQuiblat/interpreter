@@ -56,15 +56,18 @@ public class Parser {
     private boolean ifStarted;
     private Program program;
     private List<Statement> tempStatementList;
+    private boolean hasEnded;
+
 
 
     public enum OperatorType{
         LOWEST(1),
-        EQUALS(2),
-        LESSGREATER(3),
-        SUM(4),
-        PRODUCT(5),
-        PREFIX(6);
+        LOGICAL(2),
+        EQUALS(3),
+        LESSGREATER(4),
+        SUM(5),
+        PRODUCT(6),
+        PREFIX(7);
         
         private final int precedence;
         OperatorType(int precedence){
@@ -77,6 +80,7 @@ public class Parser {
     }
     private List<String> reservedWords;
     
+   
 
     public Parser(Lexer lexer){
         tempStatementList = new ArrayList<>();
@@ -92,6 +96,7 @@ public class Parser {
         ifStarted = false;
         executableStarted = false;
         variableDeclarationStarted =false;
+        hasEnded = false;
         statementsCount = 1;
         initPrecedences();
         initReservedWords();
@@ -115,7 +120,10 @@ public class Parser {
         infixPrecedences.put(TokenType.SUBTRACT, OperatorType.SUM.getPrecedence());
         infixPrecedences.put(TokenType.MULTIPLY, OperatorType.PRODUCT.getPrecedence());
         infixPrecedences.put(TokenType.DIVIDE, OperatorType.PRODUCT.getPrecedence());
-        infixPrecedences.put(TokenType.MODULO, OperatorType.PRODUCT.getPrecedence());
+        infixPrecedences.put(TokenType.AND, OperatorType.LOGICAL.getPrecedence());
+        infixPrecedences.put(TokenType.OR, OperatorType.LOGICAL.getPrecedence());
+        infixPrecedences.put(TokenType.NOT, OperatorType.LOWEST.getPrecedence());
+        
     }
 
     private void initReservedWords(){
@@ -154,6 +162,9 @@ public class Parser {
         registerPrefix(TokenType.DISPLAY, this::parseDisplayExpression);
         registerPrefix(TokenType.SCAN, this::parseScanExpression);
         registerPrefix(TokenType.IF, this::parseIfExpression);
+        registerInfix(TokenType.AND, this::parseInfixExpression);
+        registerInfix(TokenType.OR, this::parseInfixExpression);
+        registerPrefix(TokenType.NOT, this::parsePrefixExpression);
     }
 
 
@@ -198,7 +209,12 @@ public class Parser {
     }
 
     public List<Statement> parseStatement() throws Exception {
+        if(hasEnded){
+            errors.add(String.format("Error: token %s found after END CODE", curToken.getLiteral()));
+            return null;
+        }
            tempStatementList = new ArrayList<>();
+
 
             switch (curToken.getTokenType()){
                 case CHAR:
@@ -252,6 +268,7 @@ public class Parser {
 
     private void parseReassignment(){
         String ident = curToken.getLiteral();
+        executableStarted = true;
         if(statementsList.containsKey(curToken.getLiteral())){
             
             if(statementsList.get(ident) instanceof IntStatement){
@@ -422,7 +439,7 @@ public class Parser {
         }
         
     private IfExpression parseIfExpression(){
-        
+        executableStarted = false;
         if(ifStarted){
             return null;
         }
@@ -440,10 +457,11 @@ public class Parser {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         if(!expectPeek(TokenType.RPARA)){
             return null;
         }
-
+        statementsCount++;
         if(!expectPeek(TokenType.START)){
             return null;
         }
@@ -452,7 +470,7 @@ public class Parser {
             errors.add("Invalid IF");
             return null;
         }
-        
+        statementsCount++;
 
         try {
             exp.setConsequence(parseBlockStatement(curToken.getLiteral()));
@@ -463,6 +481,46 @@ public class Parser {
 
         if(peekTokenIs(TokenType.ELSE)){
             nextToken();
+            statementsCount++;
+            while(peekTokenIs(TokenType.IF)){
+                nextToken();
+                if(!expectPeek(TokenType.LPARA)){
+                    return null;
+                }
+                nextToken();
+                try {
+                    exp.addElseCondition(parseExpression(OperatorType.LOWEST.getPrecedence()));
+                    
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if(!expectPeek(TokenType.RPARA)){
+                    return null;
+                }
+                statementsCount++;
+                if(!expectPeek(TokenType.START)){
+                    return null;
+                }
+
+                nextToken();
+                if(!curTokenIs(TokenType.IF)){
+                    errors.add("Invalid IF");
+                    return null;
+                }
+                statementsCount++;
+                try {
+                    exp.addElseConsequene(parseBlockStatement(curToken.getLiteral()));
+                    statementsCount++;
+                    
+                } catch (Exception e) {
+                   e.printStackTrace();
+                }
+                if(!peekTokenIs(TokenType.ELSE)){
+                    return exp;
+                }
+                nextToken();
+
+            }
 
             if(!expectPeek(TokenType.START)){
                 return null;
@@ -472,14 +530,16 @@ public class Parser {
                 errors.add("Invalid IF");
                 return null;
             }
-
+            statementsCount++;
+            
             try {
                 exp.setAlternative(parseBlockStatement(curToken.getLiteral()));
+                statementsCount++;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-       
+        executableStarted = true;
        return exp;
 
     }    
@@ -497,6 +557,10 @@ public class Parser {
         exp.setToken(curToken);
         nextToken();
         if(!curToken.getLiteral().equals("CODE")){
+            return null;
+        }
+        if(hasStarted){
+            errors.add("ERROR: Code detected after END CODE");
             return null;
         }
         hasStarted = true;
@@ -748,7 +812,7 @@ public class Parser {
                 identifierMismatchError("CODE", curToken.getLiteral());
                 return null;
             }
-            hasStarted = false;
+            hasEnded = true;
         }else if(type.equals("IF")){
             if(!curToken.getLiteral().equals("IF")){
                 identifierMismatchError("IF", curToken.getLiteral());
@@ -915,7 +979,8 @@ public class Parser {
                 return null;
             }
             try {
-                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+                Expression result = parseExpression(OperatorType.LOWEST.getPrecedence());
+                stmt.setValue(result);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -976,11 +1041,14 @@ public class Parser {
                 while(peekTokenIs(TokenType.ASSIGN)){
                     IntStatement is = new IntStatement();
                     is.setToken(curToken);
+                    
                     Identifier tempIdent = new Identifier(curToken, curToken.getLiteral());
                     if(statementsList.containsKey(ident.getValue())){
                         errors.add(String.format("Identifier %s is already in use", tempIdent.getValue()));
                         return null;
                     }
+                    is.setName(tempIdent);
+                    
                     temp.add(is);
                     nextToken();
                     nextToken();
@@ -999,7 +1067,9 @@ public class Parser {
             }
             
             try {
-                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+                Expression result = parseExpression(OperatorType.LOWEST.getPrecedence());
+                
+                stmt.setValue(result);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1086,7 +1156,9 @@ public class Parser {
             }
             
             try {
-                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+                Expression result = parseExpression(OperatorType.LOWEST.getPrecedence());
+                stmt.setValue(result);
+                
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1167,8 +1239,11 @@ public class Parser {
                 }
                 return null;
             }
+        
             try {
-                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+                Expression result = parseExpression(OperatorType.LOWEST.getPrecedence());
+                
+                stmt.setValue(result);
             } catch (Exception e) {
                 e.printStackTrace();
                 }
@@ -1289,7 +1364,7 @@ public class Parser {
     }
 
     public void noPrefixParseFNError(TokenType t){
-        String msg = String.format("no prefix parse function for %s found", t.getLiteral());
+        String msg = String.format("Invalid token: %s found", t.getLiteral());
         errors.add(msg);
     }
 
@@ -1333,4 +1408,7 @@ public class Parser {
         infixParseFns.put(tokenType, fn);
     }
     
+    public int getStatementsCount(){
+        return statementsCount;
+    }
 }

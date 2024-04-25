@@ -42,18 +42,23 @@ public class Reader {
             e.printStackTrace();
         }
 
+        
         if(p.getErrors().size() != 0) {
             printParserErrors(out, p.getErrors());
+            
+            in.close();
+            out.close();
+            return;
 
-        }else{
-            System.out.println("No error");
         }
-
        
         System.out.println("");
         Evaluator.eval(program, env);
         
-        
+        if(Evaluator.displayCount == 0){
+
+            System.out.println("No error");
+        }
         
         in.close();
         out.close();

@@ -30,6 +30,9 @@ public class Token {
         keywords.put("SCAN", TokenType.SCAN);
         keywords.put("IF", TokenType.IF);
         keywords.put("ELSE", TokenType.ELSE);
+        keywords.put("AND", TokenType.AND);
+        keywords.put("OR", TokenType.OR);
+        keywords.put("NOT", TokenType.NOT);
     }
 
     public TokenType lookupIdent(String ident){

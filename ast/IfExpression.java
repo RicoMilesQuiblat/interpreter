@@ -1,16 +1,24 @@
 package ast;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import token.Token;
 
 public class IfExpression implements Expression{
     Token token;
     Expression condition;
     BlockStatement consequence;
+    List<Expression> elseConditions;
+    List<BlockStatement> elseConsequences;
     BlockStatement alternative;
 
     
 
     public IfExpression() {
+        elseConditions = new ArrayList<>();
+        elseConsequences = new ArrayList<>();
     }
     
 
@@ -19,8 +27,11 @@ public class IfExpression implements Expression{
         this.condition = condition;
         this.consequence = consequence;
         this.alternative = alternative;
+        elseConditions = new ArrayList<>();
+        elseConsequences = new ArrayList<>();
     }
 
+    
 
     @Override
     public void expressionNode() {
@@ -79,6 +90,32 @@ public class IfExpression implements Expression{
 
     public void setAlternative(BlockStatement alternative) {
         this.alternative = alternative;
+    }
+
+
+    public List<Expression> getElseConditions() {
+        return elseConditions;
+    }
+
+
+    public void setElseConditions(List<Expression> elseConditions) {
+        this.elseConditions = elseConditions;
+    }
+    public void addElseCondition(Expression bs){
+        elseConditions.add(bs);
+    }
+
+
+    public List<BlockStatement> getElseConsequences() {
+        return elseConsequences;
+    }
+    public void addElseConsequene(BlockStatement bs){
+        elseConsequences.add(bs);
+    }
+
+
+    public void setElseConsequences(List<BlockStatement> elseConsequences) {
+        this.elseConsequences = elseConsequences;
     }
     
 }
