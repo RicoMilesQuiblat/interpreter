@@ -1,22 +1,42 @@
 Language Specification of CODE Programming Language
+
 Introduction
+
 CODE is a strongly – typed programming language developed to teach Junior High School students basics of
 programming. It was developed by a group of students enrolled in the Programming Languages course. CODE is a pure
 interpreter.
+
+
 Sample Program:
-# this is a sample program in CODE
+
+\# this is a sample program in CODE
+
 BEGIN CODE
-INT x, y, z=5
-CHAR a_1=’n’
-BOOL t=”TRUE”
-x=y=4
-a_1=’c’
-# this is a comment
-DISPLAY: x & t & z & $ & a_1 & [#] & “last”
+
+  INT x, y, z=5
+
+  CHAR a_1=’n’
+
+  BOOL t=”TRUE”
+
+  x=y=4
+
+  a_1=’c’
+
+  \# this is a comment
+
+  DISPLAY: x & t & z & $ & a_1 & [#] & “last”
+
 END CODE
+
+
 Output of the sample program:
+
 4TRUE5
+
 n#last
+
+
 Language Grammar
 Program Structure:
 - all codes are placed inside BEGIN CODE and END CODE
