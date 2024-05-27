@@ -151,8 +151,7 @@ public class Lexer {
                 }else if(tok.getLiteral().equals("FALSE")){
                     tok.setTokenType(TokenType.FALSE);
                 }else{
-                    tok.setLiteral("");
-                    tok.setTokenType(TokenType.ILLEGAL);
+                    tok.setTokenType(TokenType.STRING);
                 }
                 break;
             case 0:

@@ -36,6 +36,9 @@ import lexer.Lexer;
 import token.Token;
 import token.TokenType;
 import ast.Statement;
+import ast.StringValue;
+import ast.WhileExpression;
+
 import org.junit.Assert;;
 
 
@@ -57,6 +60,7 @@ public class Parser {
     private Program program;
     private List<Statement> tempStatementList;
     private boolean hasEnded;
+    private boolean whileStarted;
 
 
 
@@ -94,6 +98,7 @@ public class Parser {
         hasStarted = false;
         functionStarted = false;
         ifStarted = false;
+        whileStarted = false;
         executableStarted = false;
         variableDeclarationStarted =false;
         hasEnded = false;
@@ -119,6 +124,7 @@ public class Parser {
         infixPrecedences.put(TokenType.PLUS, OperatorType.SUM.getPrecedence());
         infixPrecedences.put(TokenType.SUBTRACT, OperatorType.SUM.getPrecedence());
         infixPrecedences.put(TokenType.MULTIPLY, OperatorType.PRODUCT.getPrecedence());
+        infixPrecedences.put(TokenType.MODULO, OperatorType.PRODUCT.getPrecedence());
         infixPrecedences.put(TokenType.DIVIDE, OperatorType.PRODUCT.getPrecedence());
         infixPrecedences.put(TokenType.AND, OperatorType.LOGICAL.getPrecedence());
         infixPrecedences.put(TokenType.OR, OperatorType.LOGICAL.getPrecedence());
@@ -162,9 +168,11 @@ public class Parser {
         registerPrefix(TokenType.DISPLAY, this::parseDisplayExpression);
         registerPrefix(TokenType.SCAN, this::parseScanExpression);
         registerPrefix(TokenType.IF, this::parseIfExpression);
+        registerPrefix(TokenType.WHILE, this::parseWhileExpression);
         registerInfix(TokenType.AND, this::parseInfixExpression);
         registerInfix(TokenType.OR, this::parseInfixExpression);
         registerPrefix(TokenType.NOT, this::parsePrefixExpression);
+        registerPrefix(TokenType.STRING, this::parseString);
     }
 
 
@@ -193,6 +201,10 @@ public class Parser {
         return program;
         
 
+    }
+    public Expression parseString(){
+        String str = curToken.getLiteral();
+        return new StringValue(curToken, str);
     }
 
     public Expression parseIdentifier(){
@@ -437,13 +449,53 @@ public class Parser {
                 }
             }
         }
+
+    private WhileExpression parseWhileExpression(){
+        executableStarted = true;
+        whileStarted = true;
         
-    private IfExpression parseIfExpression(){
-        executableStarted = false;
-        if(ifStarted){
+        WhileExpression exp = new WhileExpression();
+        exp.setToken(curToken);
+
+        if(!expectPeek(TokenType.LPARA)){
             return null;
         }
+        nextToken();
+        try{
+            exp.setCondition(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        if(!expectPeek(TokenType.RPARA)){
+            return null;
+        }
+        statementsCount++;
+
+        if(!expectPeek(TokenType.START)){
+            return null;
+        }
+       
+        nextToken();
+        if(!curTokenIs(TokenType.WHILE)){
+            errors.add("Invalid WHILE");
+            return null;
+        }
+        statementsCount++;
+
+        try{
+            exp.setContent(parseBlockStatement(curToken.getLiteral()));
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        whileStarted = false;
+        return exp;
+    }
+        
+    private IfExpression parseIfExpression(){
+        executableStarted = true;
         ifStarted = true;
+        
         IfExpression exp = new IfExpression();
         exp.setToken(curToken);
 
@@ -465,6 +517,7 @@ public class Parser {
         if(!expectPeek(TokenType.START)){
             return null;
         }
+       
         nextToken();
         if(!curTokenIs(TokenType.IF)){
             errors.add("Invalid IF");
@@ -540,13 +593,14 @@ public class Parser {
             }
         }
         executableStarted = true;
+        ifStarted = false;
        return exp;
 
     }    
 
 
     private BeginExpression parseBeginExpression(){
-        if(ifStarted){
+        if(ifStarted || whileStarted){
             errors.add("Invalid begin");
             return null;
         }
@@ -577,6 +631,10 @@ public class Parser {
 
         return exp;
     }
+
+    private void parseSpecialCharacters(){
+
+    }
     
 
     private DisplayExpression parseDisplayExpression(){
@@ -596,7 +654,7 @@ public class Parser {
         }
         nextToken();
         List<Object> all = new ArrayList<>();
-        if(curTokenIs(TokenType.ESCAPE)){
+        if(curTokenIs(TokenType.ESCAPE) || curTokenIs(TokenType.EOL)){
             all.add(curToken);
         }else{
 
@@ -610,12 +668,9 @@ public class Parser {
             nextToken();
             all.add(curToken);
             nextToken();
-            if(curTokenIs(TokenType.ESCAPE) || curTokenIs(TokenType.EOL)){
+            if(curTokenIs(TokenType.ESCAPE) || curTokenIs(TokenType.EOL) || curTokenIs(TokenType.STRING)){
                 all.add(curToken);
                 continue;
-            }else if(curTokenIs(TokenType.ESCAPE)){
-                errors.add("Invalid Concatenation ");
-                return null;
             }
 
             try {
@@ -806,18 +861,10 @@ public class Parser {
         }
         
         nextToken();
-
-        if(type.equals("CODE") && !functionStarted){
-            if(!curToken.getLiteral().equals("CODE")){
-                identifierMismatchError("CODE", curToken.getLiteral());
-                return null;
-            }
+        if(type.equals("CODE")){
+            
             hasEnded = true;
         }else if(type.equals("IF")){
-            if(!curToken.getLiteral().equals("IF")){
-                identifierMismatchError("IF", curToken.getLiteral());
-                return null;
-            }
             ifStarted = false;
         }
 
@@ -898,7 +945,6 @@ public class Parser {
     }
    
     public Expression parseExpression(int precedence) throws Exception{
-       
         PrefixParseFn prefix = prefixParseFns.get(curToken.getTokenType());
         if(prefix == null){
             noPrefixParseFNError(curToken.getTokenType());

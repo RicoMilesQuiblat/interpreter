@@ -10,6 +10,7 @@ import ast.Program;
 import evaluator.Evaluator;
 import lexer.Lexer;
 import object.Environment;
+import object.Error;
 import parser.Parser;
 
 public class Reader {
@@ -53,13 +54,14 @@ public class Reader {
         }
        
         System.out.println("");
-        Evaluator.eval(program, env);
-        
-        if(Evaluator.displayCount == 0){
+        Object object = Evaluator.eval(program, env);
 
+        if(object instanceof Error){
+            Error err = (Error)object;
+            System.out.println(err.inspect());
+        }else if(Evaluator.displayCount == 0){
             System.out.println("No error");
         }
-        
         in.close();
         out.close();
     }

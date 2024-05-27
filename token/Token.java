@@ -33,6 +33,7 @@ public class Token {
         keywords.put("AND", TokenType.AND);
         keywords.put("OR", TokenType.OR);
         keywords.put("NOT", TokenType.NOT);
+        keywords.put("WHILE", TokenType.WHILE);
     }
 
     public TokenType lookupIdent(String ident){

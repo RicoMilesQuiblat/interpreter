@@ -23,6 +23,8 @@ import ast.Node;
 import ast.PrefixExpression;
 import ast.Program;
 import ast.Statement;
+import ast.StringValue;
+import ast.WhileExpression;
 import object.BooleanObject;
 import object.CharacterObject;
 import object.Environment;
@@ -33,6 +35,7 @@ import object.IntegerObject;
 import object.NullObject;
 import object.Object;
 import object.ObjectType;
+import object.StringObject;
 import object.Structure;
 import token.Token;
 import token.TokenType;
@@ -92,6 +95,9 @@ public class Evaluator {
         }else if(node instanceof IfExpression){
             IfExpression exp = (IfExpression)node;
             return evalIfExpression(exp,env);
+        }else if(node instanceof WhileExpression){
+            WhileExpression exp = (WhileExpression)node;
+            return evalWhileExpression(exp,env);
         }else if(node instanceof InfixExpression){
             InfixExpression ie = (InfixExpression)node;
             Object left = eval(ie.getLeft(), env);
@@ -171,6 +177,9 @@ public class Evaluator {
             env.set(bs.getName().getValue(), val);
             
 
+        }else if(node instanceof StringValue){
+            StringValue sv = (StringValue)node;
+            return evalString(sv, env);
         }else if(node instanceof Identifier){
             Identifier id = (Identifier) node;
             return evalIdentifier(id, env);
@@ -192,7 +201,7 @@ public class Evaluator {
                     if(token == null){
                         return newError("Invalid token", null);
                     }
-                    if(token.getTokenType() == TokenType.ESCAPE){
+                    if(token.getTokenType() == TokenType.ESCAPE || token.getTokenType().equals(TokenType.STRING)){
                         System.out.print(token.getLiteral());
                     }else if(token.getTokenType() == TokenType.EOL){
                         System.out.print("\n");
@@ -242,6 +251,16 @@ public class Evaluator {
         
 
     }
+    private static Object evalWhileExpression(WhileExpression expression, Environment env){
+        Object content = null;
+        Object condition = eval(expression.getCondition(),env);
+        while(isTruthy(condition)){
+            content = eval(expression.getContent(), env);
+            condition = eval(expression.getCondition(), env);
+        }
+
+        return content;
+    }
 
     private static boolean isTruthy(Object obj){
         if(obj.equals(NULL)){
@@ -252,6 +271,9 @@ public class Evaluator {
             return false;
         }
         return true;
+    }
+    private static Object evalString(StringValue sv, Environment env){
+        return new StringObject(sv.getValue());
     }
 
     private static Object evalIdentifier(Identifier node, Environment env){

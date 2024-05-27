@@ -46,6 +46,9 @@ public enum TokenType {
     AND("AND"),
     OR("OR"),
     NOT("NOT"),
+    STRING("STRING"),
+    WHILE("WHILE"),
+
     
     //SPECIAL
     COMMENT("#"),
