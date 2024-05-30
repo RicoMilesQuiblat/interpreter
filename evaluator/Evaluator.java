@@ -256,7 +256,6 @@ public class Evaluator {
                 }
             }
             
-            System.out.println("");
             
         }
         return NULL;
@@ -435,6 +434,9 @@ public class Evaluator {
     }
 
     private static Object evalInfixExpression(String operator, Object left, Object right){
+        if(left == null || right == null){
+            return newError("Incompatible: can't use operator %s on %s and %s", operator, left, right);
+        }
         if(left.type().equals(ObjectType.INTEGER_OBJ) && right.type().equals(ObjectType.INTEGER_OBJ)){
             return evalIntegerInfixExpression(operator, left, right);
         }else if(left.type().equals(ObjectType.CHARACTER_OBJ) && right.type().equals(ObjectType.CHARACTER_OBJ)){

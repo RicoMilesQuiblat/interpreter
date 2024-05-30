@@ -1,8 +1,6 @@
 BEGIN CODE
-HASH sad = {"TRUE": 2, "FALSE": 10 * 10, 1: "TRUE"}
-INT a = 5 * 5
-BOOL shit = "FALSE"
-
-DISPLAY: a * sad|shit\
-
+	INT a = 3, b = 4, c, d
+	SCAN: c
+	d = (a + c) * b
+	DISPLAY: d
 END CODE
