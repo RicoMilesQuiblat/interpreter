@@ -1,7 +1,9 @@
 package evaluator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import ast.BeginExpression;
 import ast.BlockStatement;
@@ -14,14 +16,18 @@ import ast.Expression;
 import ast.ExpressionStatement;
 import ast.FloatLiteral;
 import ast.FloatStatement;
+import ast.HashLiteral;
+import ast.HashStatement;
 import ast.Identifier;
 import ast.IfExpression;
+import ast.IndexExpression;
 import ast.InfixExpression;
 import ast.IntStatement;
 import ast.IntegerLiteral;
 import ast.Node;
 import ast.PrefixExpression;
 import ast.Program;
+import ast.ReturnStatement;
 import ast.Statement;
 import ast.StringValue;
 import ast.WhileExpression;
@@ -31,10 +37,14 @@ import object.Environment;
 import object.Error;
 import object.ExtendedEnvironment;
 import object.FloatObject;
+import object.HashKey;
+import object.HashObject;
+import object.HashPair;
 import object.IntegerObject;
 import object.NullObject;
 import object.Object;
 import object.ObjectType;
+import object.ReturnValueObject;
 import object.StringObject;
 import object.Structure;
 import token.Token;
@@ -53,16 +63,13 @@ public class Evaluator {
 
         if(node instanceof Program){
             Program program = (Program)node;
-            
             return evalStatements(program.getStatements(), env);
 
         }else if(node instanceof BeginExpression){
             BeginExpression exp = (BeginExpression)node;
             BlockStatement body = exp.getBody();
-            Structure struct = new Structure(body, env);
-            Environment extendedEnv = ExtendedEnvironment.newEnclosedEnvironment(struct.getEnv());
-            
-            return eval(struct.getBody(), extendedEnv);
+        
+            return eval(body, env);
             
 
         }else if(node instanceof ExpressionStatement){
@@ -78,6 +85,10 @@ public class Evaluator {
         }else if(node instanceof FloatLiteral){
             FloatLiteral inlit = (FloatLiteral) node;
             return new FloatObject(inlit.getValue());
+
+        }else if(node instanceof HashLiteral){
+            HashLiteral hash = (HashLiteral)node;
+            return evalHashLiteral(hash, env);
 
         }else if(node instanceof CharacterExpression){
             CharacterExpression ce = (CharacterExpression)node;
@@ -113,8 +124,27 @@ public class Evaluator {
             }
 
             return evalInfixExpression(ie.getOperator(), left, right);
+        }else if(node instanceof HashStatement){
+            HashStatement hs = (HashStatement)node;
+
+            if(hs.getValue() == null){
+                env.set(hs.getIdent().getValue(), null);
+                return NULL;
+            }
+
+            Object val = eval(hs.getValue(), env);
+            if(isError(val)){
+                return val;
+            }
+
+            if(!(val instanceof HashObject)){
+                return newError("Type Conversion Error, expect = %s, got = %s", ObjectType.INTEGER_OBJ, val.type());
+            }
+            env.set(hs.getIdent().getValue(), val);
+
         }else if(node instanceof IntStatement){
             IntStatement is = (IntStatement)node;
+          
             if(is.getValue() == null){
                 env.set(is.getName().getValue(), null);
                 return NULL;
@@ -177,6 +207,11 @@ public class Evaluator {
             env.set(bs.getName().getValue(), val);
             
 
+        }else if(node instanceof ReturnStatement){
+            ReturnStatement rs = (ReturnStatement) node;
+            Object val = eval(rs.getReturnValue(), env);
+            return new ReturnValueObject(val);
+
         }else if(node instanceof StringValue){
             StringValue sv = (StringValue)node;
             return evalString(sv, env);
@@ -186,6 +221,18 @@ public class Evaluator {
         }else if(node instanceof BlockStatement){
             BlockStatement bs = (BlockStatement) node;
             return evalStatements(bs.getStatements(), env);
+        }else if(node instanceof IndexExpression){
+            IndexExpression ie = (IndexExpression)node;
+            Object left = eval(ie.getLeft(), env);
+            if(isError(left)){
+                return left;
+            }
+            Object index = eval(ie.getIndex(), env);
+            if(isError(index)){
+                return index;
+            }
+            return evalIndexExpression(left, index);
+
         }else if(node instanceof DisplayExpression){
             DisplayExpression de = (DisplayExpression)node;
             displayCount++;
@@ -219,13 +266,36 @@ public class Evaluator {
    
     private static Object evalStatements(List<Statement> stmts, Environment env){
         Object result = null;
-
         for(Statement stmt: stmts){
-            result = eval(stmt, env);
 
+            result = eval(stmt, env);
+            
+            if(result instanceof ReturnValueObject){
+                ReturnValueObject rv = (ReturnValueObject) result;
+                return rv.getValue();
+            }
             if(result !=  null &&result.type().equals(ObjectType.ERROR_OBJ)){
                 return result;
             }
+        }
+        return result;
+    }
+
+
+
+
+
+    private static List<Object> evalExpressions(List<Expression> exps, Environment env ){
+        List<Object> result = new ArrayList<>();
+
+        for(Expression exp: exps){
+            Object evaluated = eval(exp, env);
+            if(isError(evaluated)){
+                List<Object> temp = new ArrayList<>();
+                temp.add(evaluated);
+                return temp;
+            }
+            result.add(evaluated);
         }
         return result;
     }
@@ -249,6 +319,72 @@ public class Evaluator {
         
         return eval(expression.getAlternative(), env);
         
+
+    }
+    private static Object evalHashLiteral(HashLiteral node, Environment env){
+       Map<HashKey, HashPair> pairs = new HashMap<>();
+       
+       for(Expression keyNode: node.getPairs().keySet()){
+            Object key = eval(keyNode, env);
+           
+            if(isError(key)){
+                return key;
+            }
+            Object value = eval(node.getPairs().get(keyNode), env);
+           
+            if(isError(value)){
+                return value;
+            }
+            HashKey hashed = null;
+            if(key instanceof IntegerObject){
+                IntegerObject io = (IntegerObject)key;
+                hashed = HashKey.fromInteger(io.getValue());
+                hashed.setType(ObjectType.INTEGER_OBJ);
+            }else if(key instanceof BooleanObject){
+                BooleanObject bo = (BooleanObject)key;
+                hashed = HashKey.fromBoolean(bo.getValue());
+                hashed.setType(ObjectType.BOOLEAN_OBJ);
+            }else if(key instanceof CharacterObject){
+                CharacterObject bo = (CharacterObject)key;
+                hashed = HashKey.fromChar(bo.getValue());
+                hashed.setType(ObjectType.CHARACTER_OBJ);
+            }else if(key instanceof FloatObject){
+                FloatObject bo = (FloatObject)key;
+                hashed = HashKey.fromFloat(bo.getValue());
+                hashed.setType(ObjectType.FLOAT_OBJ);
+            }
+
+
+
+            pairs.put(hashed, new HashPair(key, value));
+            
+       }
+       
+       return new HashObject(pairs);
+
+    }
+
+    private static Object evalIndexExpression(Object left, Object index){
+        return evalHashIndexExpression(left, index);
+    }
+
+    private static Object evalHashIndexExpression(Object left, Object index){
+        HashObject hash = (HashObject)left;
+        HashPair pair = null;
+        if(index.type().equals(ObjectType.BOOLEAN_OBJ)){
+            BooleanObject obj = (BooleanObject)index;
+            pair = hash.getPairs().get(HashKey.fromBoolean(obj.getValue()));
+        }else if(index.type().equals(ObjectType.INTEGER_OBJ)){
+            IntegerObject obj = (IntegerObject)index;
+            pair = hash.getPairs().get(HashKey.fromInteger(obj.getValue()));
+        }else if(index.type().equals(ObjectType.CHARACTER_OBJ)){
+            CharacterObject obj = (CharacterObject)index;
+            pair = hash.getPairs().get(HashKey.fromChar(obj.getValue()));
+        }else if(index.type().equals(ObjectType.FLOAT_OBJ)){
+            FloatObject obj = (FloatObject)index;
+            pair = hash.getPairs().get(HashKey.fromFloat(obj.getValue()));
+        }
+        return pair.getValue();
 
     }
     private static Object evalWhileExpression(WhileExpression expression, Environment env){

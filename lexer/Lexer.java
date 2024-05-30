@@ -154,6 +154,22 @@ public class Lexer {
                     tok.setTokenType(TokenType.STRING);
                 }
                 break;
+            case '{':
+                tok.setLiteral("{");
+                tok.setTokenType(TokenType.LBRACE);
+                break;
+            case '}':
+                tok.setLiteral("}");
+                tok.setTokenType(TokenType.RBRACE);
+                break;
+            case '|':
+                tok.setLiteral("|");
+                tok.setTokenType(TokenType.INDEXOPEN);
+                break;         
+            case '\\':
+                tok.setLiteral("\\");
+                tok.setTokenType(TokenType.INDEXCLOSE);
+                break;                           
             case 0:
                 tok.setLiteral("");
                 tok.setTokenType(TokenType.EOF);

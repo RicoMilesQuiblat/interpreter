@@ -40,7 +40,6 @@ public enum TokenType {
     FLOAT("FLOAT"),
     DISPLAY("DISPLAY"),
     SCAN("SCAN"),
-    FUNCTION("FUNCTION"),
     IF("IF"),
     ELSE("ELSE"),
     AND("AND"),
@@ -48,14 +47,21 @@ public enum TokenType {
     NOT("NOT"),
     STRING("STRING"),
     WHILE("WHILE"),
+    RETURN("RETURN"),
+    HASH("HASH"),
 
     
     //SPECIAL
     COMMENT("#"),
     COLON(":"),
+    LBRACE("{"),
+    RBRACE("}"),
     COMMA(","),
     EOL("$"),
+    INDEXOPEN("|"),
+    INDEXCLOSE("\\"),
     CONCAT("&");
+    
 
 
 

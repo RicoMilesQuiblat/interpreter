@@ -23,14 +23,17 @@ import ast.Expression;
 import ast.ExpressionStatement;
 import ast.FloatLiteral;
 import ast.FloatStatement;
-import ast.FunctionLiteral;
+import ast.HashLiteral;
+import ast.HashStatement;
 import ast.Identifier;
 import ast.IfExpression;
+import ast.IndexExpression;
 import ast.InfixExpression;
 import ast.IntStatement;
 import ast.IntegerLiteral;
 import ast.PrefixExpression;
 import ast.Program;
+import ast.ReturnStatement;
 import ast.ScanExpression;
 import lexer.Lexer;
 import token.Token;
@@ -52,7 +55,6 @@ public class Parser {
     private Map<TokenType, Integer> infixPrecedences; 
     private Map<String, Statement> statementsList; 
     private Boolean hasStarted;
-    private Boolean functionStarted;
     private Boolean variableDeclarationStarted;
     private Boolean executableStarted;
     private int statementsCount;
@@ -65,13 +67,15 @@ public class Parser {
 
 
     public enum OperatorType{
+        
         LOWEST(1),
         LOGICAL(2),
         EQUALS(3),
         LESSGREATER(4),
         SUM(5),
         PRODUCT(6),
-        PREFIX(7);
+        PREFIX(7),
+        INDEX(8);
         
         private final int precedence;
         OperatorType(int precedence){
@@ -96,7 +100,6 @@ public class Parser {
         reservedWords = new ArrayList<>();
         statementsList = new HashMap<>();
         hasStarted = false;
-        functionStarted = false;
         ifStarted = false;
         whileStarted = false;
         executableStarted = false;
@@ -129,6 +132,7 @@ public class Parser {
         infixPrecedences.put(TokenType.AND, OperatorType.LOGICAL.getPrecedence());
         infixPrecedences.put(TokenType.OR, OperatorType.LOGICAL.getPrecedence());
         infixPrecedences.put(TokenType.NOT, OperatorType.LOWEST.getPrecedence());
+        infixPrecedences.put(TokenType.INDEXOPEN, OperatorType.INDEX.getPrecedence());
         
     }
 
@@ -141,6 +145,8 @@ public class Parser {
         reservedWords.add("SCAN");
         reservedWords.add("BEGIN");
         reservedWords.add("END");
+        reservedWords.add("FUNC");
+        reservedWords.add("HASH");
     }
 
     private void registerExpressions(){
@@ -164,7 +170,6 @@ public class Parser {
         registerPrefix(TokenType.TRUE, this::parseBoolean);
         registerPrefix(TokenType.FALSE, this::parseBoolean);
         registerPrefix(TokenType.CHARACTER, this::parseCharacter);
-        registerPrefix(TokenType.FUNCTION, this::parseFunctionLiteral);
         registerPrefix(TokenType.DISPLAY, this::parseDisplayExpression);
         registerPrefix(TokenType.SCAN, this::parseScanExpression);
         registerPrefix(TokenType.IF, this::parseIfExpression);
@@ -173,6 +178,8 @@ public class Parser {
         registerInfix(TokenType.OR, this::parseInfixExpression);
         registerPrefix(TokenType.NOT, this::parsePrefixExpression);
         registerPrefix(TokenType.STRING, this::parseString);
+        registerPrefix(TokenType.LBRACE, this::parseHashLiteral);
+        registerInfix(TokenType.INDEXOPEN, this::parseIndexExpression);
     }
 
 
@@ -219,6 +226,61 @@ public class Parser {
     public Expression parseCharacter(){
         return new CharacterExpression(curToken, curToken.getLiteral().charAt(0));
     }
+    
+    public Expression parseHashLiteral(){
+        HashLiteral hash = new HashLiteral();
+        hash.setToken(curToken);
+        Map<Expression, Expression> tempMap = new HashMap<>();
+        
+        while(!peekTokenIs(TokenType.RBRACE)){
+            nextToken();
+            try {
+                Expression key =  parseExpression(OperatorType.LOWEST.getPrecedence());
+                if(!expectPeek(TokenType.COLON)){
+                    return null;
+                }
+                nextToken();
+                Expression value = parseExpression(OperatorType.LOWEST.getPrecedence());
+                
+                tempMap.put(key, value);
+
+                if(!peekTokenIs(TokenType.RBRACE) && !expectPeek(TokenType.COMMA)){
+                    return null;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+        if(!expectPeek(TokenType.RBRACE)){
+            return null;
+        }
+
+        hash.setPairs(tempMap);
+
+        return hash;
+
+
+    }
+
+    public Expression parseIndexExpression(Expression left){
+        IndexExpression indexExpression = new IndexExpression();
+        indexExpression.setToken(curToken);
+        indexExpression.setLeft(left);
+        nextToken();
+
+        try {
+            indexExpression.setIndex(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if(!expectPeek(TokenType.INDEXCLOSE)){
+            return null;
+        }
+
+        return indexExpression;
+    }
+
 
     public List<Statement> parseStatement() throws Exception {
         if(hasEnded){
@@ -229,6 +291,9 @@ public class Parser {
 
 
             switch (curToken.getTokenType()){
+                case RETURN:
+                    parseReturnStatement();
+                    return tempStatementList;
                 case CHAR:
                     if(executableStarted){
                         errors.add("Cannot Declare Variable after Executable code");
@@ -261,6 +326,14 @@ public class Parser {
                 }
                 variableDeclarationStarted = true;
                 parseFloatStatement();
+                return tempStatementList;
+                case HASH:
+                if(executableStarted){
+                    errors.add("Cannot Declare Variable after Executable code");
+                    return null;
+                }
+                variableDeclarationStarted = true;
+                parseHashStatement();
                 return tempStatementList;
                 case ILLEGAL:
                     errors.add(String.format("Illegal token %s", curToken.getLiteral()));
@@ -491,6 +564,8 @@ public class Parser {
         whileStarted = false;
         return exp;
     }
+
+  
         
     private IfExpression parseIfExpression(){
         executableStarted = true;
@@ -632,8 +707,26 @@ public class Parser {
         return exp;
     }
 
-    private void parseSpecialCharacters(){
+    private ReturnStatement parseReturnStatement(){
+        if(Lexer.getLine() - 1 < statementsCount){
+            errors.add("More than one statement per line is not allowed");
+            return null;
+        }
+        if(!hasStarted){
+            errors.add(String.format("Program should start with %s, got = %s", "BEGIN CODE", curToken.getLiteral()));
+            return null;
+        }
+        ReturnStatement stmt = new ReturnStatement();
+        stmt.setToken(curToken);
+        nextToken();
 
+        try{
+            stmt.setReturnValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        tempStatementList.add(stmt);
+        return stmt;
     }
     
 
@@ -787,57 +880,8 @@ public class Parser {
     }
 
     
-    private Expression parseFunctionLiteral(){
-        FunctionLiteral lit = new FunctionLiteral();
-        lit.setToken(curToken);
-
-        if(!expectPeek(TokenType.LPARA)){
-            return null;
-        }
-
-        lit.setParameters(parseFunctionParameters());
-
-        if(!expectPeek(TokenType.START)){
-            return null;
-        }
-        try {
-            lit.setBody(parseBlockStatement("FUNCTION"));
-        } catch (Exception e) {
-            
-        }
-
     
-        return lit;
 
-    }
-
-    private List<Identifier> parseFunctionParameters(){
-        List<Identifier> identifiers = new ArrayList<>();
-
-        if(peekTokenIs(TokenType.RPARA)){
-            nextToken();
-            return identifiers;
-        }
-
-        nextToken();
-
-        Identifier ident = new Identifier(curToken, curToken.getLiteral());
-        
-        identifiers.add(ident);
-
-        while(peekTokenIs(TokenType.COMMA)){
-            nextToken();
-            nextToken();
-            ident = new Identifier(curToken, curToken.getLiteral());
-            identifiers.add(ident);
-        }
-        if(!expectPeek(TokenType.RPARA)){
-            return null;
-        }
-
-        return identifiers;
-
-    }
 
     private BlockStatement parseBlockStatement(String type) throws Exception{
         BlockStatement bs = new BlockStatement();
@@ -1049,6 +1093,53 @@ public class Parser {
     }
 
 
+    private HashStatement parseHashStatement(){
+        if(Lexer.getLine() - 1 < statementsCount){
+            errors.add("More than one statement per line is not allowed");
+            return null;
+        }
+        if(!hasStarted){
+            errors.add(String.format("Program should start with %s, got = %s", "BEGIN CODE", curToken.getLiteral()));
+            return null;
+        }
+        HashStatement stmt = new HashStatement();
+        stmt.setToken(curToken);
+
+        if(!expectPeek(TokenType.IDENT)){
+            return null;
+        }
+
+        if(isReservedWord(curToken.getLiteral())){
+            reservedWordsError(curToken.getLiteral());
+            return null;
+        }
+
+        Identifier ident = new Identifier(curToken, curToken.getLiteral());
+        if(statementsList.containsKey(ident.getValue())){
+            errors.add(String.format("Identifier %s is already in use", ident.getValue()));
+            return null;
+        }
+
+        stmt.setIdent(ident);
+
+        if(peekTokenIs(TokenType.ASSIGN)){
+            nextToken();
+            nextToken();
+            try {
+                stmt.setValue(parseExpression(OperatorType.LOWEST.getPrecedence()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+        tempStatementList.add(stmt);
+        statementsList.put(ident.getValue(), stmt);
+        statementsCount++;
+        return stmt;
+
+
+    }
+
     public IntStatement parseIntStatement(){
         if(Lexer.getLine() - 1 < statementsCount){
             errors.add("More than one statement per line is not allowed");
@@ -1138,6 +1229,7 @@ public class Parser {
         }
         tempStatementList.add(stmt);
         
+
        return stmt;
     }
 
@@ -1415,7 +1507,7 @@ public class Parser {
     }
 
     private void peekError(TokenType t){
-        String msg = String.format("expected next token to be %s, got %s instead", t, peekToken.getTokenType());
+        String msg = String.format("Error at line %d: expected next token to be %s, got %s instead",Lexer.getLine(), t, peekToken.getTokenType());
         errors.add(msg);
     }
 

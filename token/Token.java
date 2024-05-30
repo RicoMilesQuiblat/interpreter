@@ -34,6 +34,8 @@ public class Token {
         keywords.put("OR", TokenType.OR);
         keywords.put("NOT", TokenType.NOT);
         keywords.put("WHILE", TokenType.WHILE);
+        keywords.put("RETURN", TokenType.RETURN);
+        keywords.put("HASH", tokenType.HASH);
     }
 
     public TokenType lookupIdent(String ident){

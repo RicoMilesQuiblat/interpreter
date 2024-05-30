@@ -10,7 +10,10 @@ public enum ObjectType {
     ERROR_OBJ("ERROR"),
     BEGIN_OBJ("BEGIN"),
     STRUCTURE_OBJ("STRUCTURE"),
-    STRING_OBJ("STRING");
+    RETURN_VALUE_OBJ("RETURN_VALUE"),
+    FUNCTION_OBJ("FUNCTION"),
+    STRING_OBJ("STRING"),
+    HASH_OBJ("HASH");
 
     private String name;
 
